@@ -1,22 +1,17 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import styled, { keyframes, createGlobalStyle } from "styled-components";
-// 1. Importar o hook de autenticação do Clerk
+import styled from "styled-components";
+import { motion, animate, useMotionValue, useTransform } from "framer-motion";
 import { useAuth } from "@clerk/clerk-react";
+import { ChevronRight, MapPin, Clock, Camera, Star } from "lucide-react";
 
-const HomeGlobalStyle = createGlobalStyle`
-  @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;400;700;900&display=swap');
-  body { font-family: 'Inter', sans-serif; background-color: #050505; margin: 0; }
-  h1, h2, h3 { font-family: 'Syncopate', sans-serif; text-transform: uppercase; }
-`;
+// Importando sua instância do axios configurada
+import { api } from "../../services/api";
 
-const shine = keyframes` 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } `;
+import { HomeGlobalStyle, THEME, shine } from "./HomeStyles";
+import { MainButton, PriceCard } from "./HomeComponents";
 
-const Container = styled.div`
-  min-height: 100vh;
-  color: #fff;
-  background: #050505;
-`;
+// --- STYLED COMPONENTS DE LAYOUT ---
 
 const Hero = styled.section`
   height: 100vh;
@@ -25,245 +20,452 @@ const Hero = styled.section`
   align-items: center;
   justify-content: center;
   text-align: center;
+  position: relative;
   background:
-    linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+    linear-gradient(rgba(0, 0, 0, 0.4), ${THEME.bg}),
     url("https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop");
   background-size: cover;
   background-position: center;
-  border-bottom: 1px solid #1a1a1a;
+  background-attachment: fixed;
+  padding: 0 20px;
 `;
 
 const Brand = styled.h1`
-  font-size: clamp(3rem, 15vw, 8rem);
-  font-weight: 700;
-  letter-spacing: -5px;
-  margin: 0;
-  background: linear-gradient(90deg, #fff, #444, #fff);
+  font-size: clamp(3.5rem, 18vw, 9rem);
+  font-weight: 900;
+  letter-spacing: -6px;
+  line-height: 0.9;
+  background: linear-gradient(90deg, #fff, ${THEME.accent}, #fff);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: ${shine} 5s linear infinite;
+  animation: ${shine} 6s linear infinite;
+  margin-bottom: 20px;
 `;
 
-const AboutSection = styled.section`
-  padding: 120px 10%;
+const StatsBar = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 80px;
-  align-items: center;
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  background: #000;
+  padding: 80px 10%;
+  border-bottom: 1px solid ${THEME.border};
 `;
 
-const AboutText = styled.div`
-  h2 {
-    font-size: 2.5rem;
-    margin-bottom: 30px;
-    color: #00f2ff;
-  }
-  p {
-    font-size: 1.1rem;
-    line-height: 1.8;
-    color: #a1a1a1;
-    margin-bottom: 20px;
-  }
-  strong {
-    color: #fff;
-  }
+const StatLabel = styled.p`
+  font-size: 0.55rem;
+  color: ${THEME.accent};
+  letter-spacing: 4px;
+  font-weight: 900;
+  margin-top: 5px;
+  text-transform: uppercase;
 `;
 
-const ImageStack = styled.div`
-  position: relative;
-  height: 500px;
-  .img-main {
-    width: 80%;
-    height: 100%;
-    object-fit: cover;
+const GalleryGrid = styled.section`
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 350px);
+  gap: 20px;
+  padding: 100px 10%;
+  background: ${THEME.bg};
+
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(4, 300px);
+  }
+
+  .photo-wrapper {
+    position: relative;
+    overflow: hidden;
     border-radius: 4px;
-    filter: grayscale(100%) contrast(110%);
+    border: 1px solid ${THEME.border};
+    &:nth-child(1) {
+      grid-column: span 2;
+      grid-row: span 2;
+    }
   }
-  .accent-box {
+
+  .photo {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    filter: grayscale(100%) brightness(0.6);
+    transition: all 0.8s cubic-bezier(0.2, 1, 0.3, 1);
+  }
+
+  .overlay {
     position: absolute;
-    bottom: -20px;
-    right: 20px;
-    background: #00f2ff;
-    padding: 40px;
-    color: #000;
-    font-weight: 900;
-    font-family: "Syncopate";
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+    opacity: 0;
+    transition: 0.4s;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 30px;
+    span {
+      font-family: "Syncopate";
+      font-size: 0.7rem;
+      color: ${THEME.accent};
+      letter-spacing: 3px;
+      transform: translateY(20px);
+      transition: 0.4s;
+    }
+  }
+
+  .photo-wrapper:hover {
+    .photo {
+      filter: grayscale(0%) brightness(1);
+      transform: scale(1.08);
+    }
+    .overlay {
+      opacity: 1;
+      span {
+        transform: translateY(0);
+      }
+    }
   }
 `;
 
-const ServiceCard = styled.div`
-  background: #0a0a0a;
-  padding: 50px;
-  border: 1px solid #1a1a1a;
-  transition: 0.4s;
-  &:hover {
-    border-color: #00f2ff;
-    transform: translateY(-10px);
-  }
-`;
+// --- COMPONENTE DE NÚMERO ANIMADO ---
+
+function AnimatedNumber({ value }: { value: number }) {
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, (latest) => Math.round(latest));
+
+  useEffect(() => {
+    const controls = animate(count, value, { duration: 2.5, ease: "circOut" });
+    return controls.stop;
+  }, [value]);
+
+  return (
+    <motion.h4
+      style={{
+        color: "#fff",
+        fontSize: "3.5rem",
+        fontWeight: 200,
+        marginBottom: "5px",
+      }}
+    >
+      {rounded}
+    </motion.h4>
+  );
+}
+
+// --- COMPONENTE PRINCIPAL ---
 
 export default function Home() {
-  // 2. Extrair o status de login
   const { isSignedIn } = useAuth();
+  const [data, setData] = useState({
+    stats: { barbers: 0, totalCuts: 0, rating: "5.0", totalClients: 0 },
+    services: [],
+  });
 
-  // 3. Definir para onde o botão vai mandar
+  useEffect(() => {
+    const loadHomeData = async () => {
+      try {
+        const response = await api.get("/landing-data");
+        setData(response.data);
+      } catch (err) {
+        console.error("Erro ao carregar dados da Home:", err);
+      }
+    };
+    loadHomeData();
+  }, []);
+
   const destination = isSignedIn ? "/dashboardClient" : "/login";
 
   return (
     <>
       <HomeGlobalStyle />
-      <Container>
-        <Hero>
-          <div
+
+      {/* HERO SECTION */}
+      <Hero>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+        >
+          <span
             style={{
-              letterSpacing: "8px",
-              fontSize: "0.9rem",
-              marginBottom: "20px",
+              letterSpacing: "12px",
+              color: "#fff",
+              fontSize: "0.6rem",
+              fontWeight: 900,
+              opacity: 0.5,
             }}
           >
-            EST. 2026 // GUARULHOS
-          </div>
+           UMA EXPERIÊNCIA EXCLUSIVA
+          </span>
           <Brand>
-GOLDEN RAZOR</Brand>
-          <p style={{ fontSize: "1.5rem", fontWeight: 300, color: "#ccc" }}>
-            STUDIO & BARBER
+            GOLDEN
+            <br />
+            RAZOR
+          </Brand>
+          <p
+            style={{
+              color: "#888",
+              letterSpacing: "10px",
+              fontSize: "0.8rem",
+              fontWeight: 300,
+              marginBottom: "40px",
+            }}
+          >
+            DOMÍNIO DA NAVALHA // ARTE EM CADA DETALHE
           </p>
 
-          <div style={{ marginTop: "50px", display: "flex", gap: "20px" }}>
-            <Link
-              to={destination}
-              style={{
-                padding: "20px 40px",
-                background: isSignedIn ? "#00f2ff" : "#fff", // Muda de cor se logado
-                color: "#000",
-                textDecoration: "none",
-                fontWeight: "bold",
-                transition: "0.3s",
-              }}
-            >
-              {isSignedIn ? "IR PARA MEU PAINEL" : "AGENDAR AGORA"}
-            </Link>
-
-            {/* Se não estiver logado, mostra o botão de Login */}
-            {!isSignedIn && (
-              <Link
-                to="/login"
-                style={{
-                  padding: "20px 40px",
-                  border: "1px solid #fff",
-                  color: "#fff",
-                  textDecoration: "none",
-                }}
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <Link to={destination} style={{ textDecoration: "none" }}>
+              <MainButton
+                $primary
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
               >
-                LOGIN
-              </Link>
-            )}
+                {isSignedIn ? "VOLTAR AO PAINEL" : "RESERVAR EXPERIÊNCIA"}
+                <ChevronRight size={18} />
+              </MainButton>
+            </Link>
           </div>
-        </Hero>
+        </motion.div>
+      </Hero>
 
-        <AboutSection>
-          <ImageStack>
-            <img
-              src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop"
-              alt="Rhino Studio"
-              className="img-main"
-            />
-            <div className="accent-box">
-              PONTUALIDADE
-              <br />E RESPEITO.
-            </div>
-          </ImageStack>
+      {/* STATS BAR DINÂMICA */}
+      <StatsBar>
+        <div style={{ textAlign: "center" }}>
+          <AnimatedNumber value={data.stats.totalCuts} />
+          <StatLabel>CORTES REALIZADOS</StatLabel>
+        </div>
 
-          <AboutText>
-            <h2>O STUDIO</h2>
-            <p>
-              O <strong>Rhino Barber Studio</strong> não é apenas uma barbearia
-              em Guarulhos, é um refúgio tecnológico.
-            </p>
-            <p>
-              Nascemos com a missão de unir a <strong>força bruta</strong> do
-              estilo clássico com a <strong>agilidade</strong> do agendamento
-              digital.
-            </p>
-          </AboutText>
-        </AboutSection>
+        <div style={{ textAlign: "center" }}>
+          <AnimatedNumber value={data.stats.totalClients} />
+          <StatLabel>MEMBROS ATIVOS</StatLabel>
+        </div>
 
-        <section style={{ padding: "100px 10%", background: "#080808" }}>
-          <h2 style={{ textAlign: "center", marginBottom: "60px" }}>ARSENAL</h2>
-          <div
+        <div style={{ textAlign: "center" }}>
+          <AnimatedNumber value={data.stats.barbers} />
+          <StatLabel>BARBEIROS ELITE</StatLabel>
+        </div>
+
+        <div style={{ textAlign: "center" }}>
+          <h4
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-              gap: "20px",
+              color: "#fff",
+              fontSize: "3.5rem",
+              fontWeight: 200,
+              marginBottom: "5px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
             }}
           >
-            <ServiceCard>
-              <h3>CORTE BRUTO</h3>
-              <p>O clássico degradê ou tesoura com acabamento impecável.</p>
-              <div
-                style={{
-                  marginTop: "20px",
-                  fontSize: "1.5rem",
-                  color: "#00F2FF",
-                }}
-              >
-                R$ 50
-              </div>
-            </ServiceCard>
-            <ServiceCard>
-              <h3>BARBA REAL</h3>
-              <p>Tratamento com toalha quente e alinhamento milimétrico.</p>
-              <div
-                style={{
-                  marginTop: "20px",
-                  fontSize: "1.5rem",
-                  color: "#00F2FF",
-                }}
-              >
-                R$ 40
-              </div>
-            </ServiceCard>
-            <ServiceCard>
-              <h3>COMBO RHINO</h3>
-              <p>Experiência completa: Corte + Barba + Lavagem.</p>
-              <div
-                style={{
-                  marginTop: "20px",
-                  fontSize: "1.5rem",
-                  color: "#00F2FF",
-                }}
-              >
-                R$ 80
-              </div>
-            </ServiceCard>
-          </div>
-        </section>
+            {data.stats.rating}{" "}
+            <Star size={24} fill={THEME.accent} color={THEME.accent} />
+          </h4>
+          <StatLabel>AVALIAÇÃO GOOGLE</StatLabel>
+        </div>
+      </StatsBar>
 
-        <footer
+      {/* SERVICES SECTION (PRODUTOS) */}
+      <section style={{ padding: "150px 10%", background: THEME.bg }}>
+        <h2
           style={{
-            padding: "80px 10%",
-            borderTop: "1px solid #1a1a1a",
             textAlign: "center",
-            color: "#444",
+            marginBottom: "80px",
+            letterSpacing: "8px",
+            fontSize: "0.8rem",
+            color: THEME.accent,
           }}
         >
+          NOSSO ARSENAL
+        </h2>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "30px",
+          }}
+        >
+          {data.services.length > 0 ? (
+            data.services.map((service: any) => (
+              <PriceCard key={service.id}>
+                <h3>{service.name.toUpperCase()}</h3>
+                <p>{service.description}</p>
+                <div className="price">
+                  R$ {Number(service.price).toFixed(0)}
+                </div>
+              </PriceCard>
+            ))
+          ) : (
+            <p
+              style={{
+                textAlign: "center",
+                color: "#444",
+                width: "100%",
+                gridColumn: "1/-1",
+              }}
+            >
+              Sincronizando arsenal com o banco de dados...
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* GALLERY BENTO GRID */}
+      <GalleryGrid>
+        <div className="photo-wrapper">
           <div
+            className="photo"
             style={{
-              fontSize: "2rem",
-              fontWeight: "bold",
-              color: "#fff",
-              marginBottom: "20px",
+              backgroundImage:
+                "url(https://images.unsplash.com/photo-1599351431247-f10b21ce5602?w=1200)",
             }}
-          >
-            RHINO.
+          />
+          <div className="overlay">
+            <span>SHARP & CLEAN</span>
           </div>
-          <p>Guarulhos, SP // Todos os direitos reservados // 2026</p>
-        </footer>
-      </Container>
+        </div>
+        <div className="photo-wrapper">
+          <div
+            className="photo"
+            style={{
+              backgroundImage:
+                "url(https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=800)",
+            }}
+          />
+          <div className="overlay">
+            <span>MASTER TOUCH</span>
+          </div>
+        </div>
+        <div className="photo-wrapper">
+          <div
+            className="photo"
+            style={{
+              backgroundImage:
+                "url(https://images.unsplash.com/photo-1512690196252-740713d335ce?w=800)",
+            }}
+          />
+          <div className="overlay">
+            <span>ELITE CUT</span>
+          </div>
+        </div>
+        <div className="photo-wrapper">
+          <div
+            className="photo"
+            style={{
+              backgroundImage:
+                "url(https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800)",
+            }}
+          />
+          <div className="overlay">
+            <span>LEGACY STYLE</span>
+          </div>
+        </div>
+      </GalleryGrid>
+
+      {/* FOOTER */}
+      <footer
+        style={{
+          background: "#000",
+          padding: "120px 10% 60px",
+          borderTop: `1px solid ${THEME.border}`,
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+            gap: "80px",
+            marginBottom: "100px",
+          }}
+        >
+          <FooterSection
+            icon={<MapPin size={20} />}
+            title="LOCALIZAÇÃO"
+            text="Guarulhos, São Paulo"
+          />
+          <FooterSection
+            icon={<Clock size={20} />}
+            title="DISPONIBILIDADE"
+            text="Seg - Sáb: 09:00 às 20:00"
+          />
+          <div>
+            <h4
+              style={{
+                color: THEME.accent,
+                fontSize: "0.65rem",
+                letterSpacing: "3px",
+                marginBottom: "25px",
+              }}
+            >
+              SOCIAL
+            </h4>
+            <a
+              href="#"
+              style={{
+                color: "#fff",
+                textDecoration: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                fontSize: "0.9rem",
+                opacity: 0.7,
+              }}
+            >
+              <Camera size={20} />
+              <span>@goldenrazor_studio</span>
+            </a>
+          </div>
+        </div>
+        <div
+          style={{
+            textAlign: "center",
+            opacity: 0.2,
+            fontSize: "0.6rem",
+            letterSpacing: "5px",
+          }}
+        >
+          © 2026 GOLDEN RAZOR // DESIGNED BY GABRIEL FAGUNDES
+        </div>
+      </footer>
     </>
+  );
+}
+
+// --- AUXILIARES ---
+
+function FooterSection({
+  icon,
+  title,
+  text,
+}: {
+  icon: any;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div>
+      <h4
+        style={{
+          color: THEME.accent,
+          fontSize: "0.65rem",
+          letterSpacing: "3px",
+          marginBottom: "25px",
+        }}
+      >
+        {title}
+      </h4>
+      <p
+        style={{
+          display: "flex",
+          gap: "15px",
+          color: "#888",
+          fontSize: "0.9rem",
+          alignItems: "center",
+        }}
+      >
+        <span style={{ color: "#fff" }}>{icon}</span> {text}
+      </p>
+    </div>
   );
 }

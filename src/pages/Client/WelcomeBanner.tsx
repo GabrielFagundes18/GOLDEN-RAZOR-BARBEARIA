@@ -119,8 +119,8 @@ interface WelcomeBannerProps {
 export default function WelcomeBanner({ pontos = 0 }: WelcomeBannerProps) {
   const { user, isLoaded } = useUser();
 
-  // Lógica de Ciclo: Se pontos = 10, 20, 30... mostra 10/10 (Dourado)
-  // Se pontos = 12, mostra 2/10 (Vermelho)
+  // LÓGICA DE CICLO:
+  // Se pontos = 10, 20... mostra 10/10. Se for 12, mostra 2/10.
   const progressoNoCiclo = pontos > 0 && pontos % 10 === 0 ? 10 : pontos % 10;
   const isRewardReady = progressoNoCiclo === 10;
 
@@ -130,8 +130,6 @@ export default function WelcomeBanner({ pontos = 0 }: WelcomeBannerProps) {
     if (pontos >= 10) return "MEMBRO VETERANO";
     return "MEMBRO RECRUTA";
   };
-
-  const displayName = user?.firstName || "GUERREIRO";
 
   if (!isLoaded) return null;
 
@@ -146,7 +144,7 @@ export default function WelcomeBanner({ pontos = 0 }: WelcomeBannerProps) {
           <Crown size={12} /> {getRank()}
         </Badge>
         <h2>
-          OLÁ, <span>{displayName.toUpperCase()}</span>
+          OLÁ, <span>{(user?.firstName || "GUERREIRO").toUpperCase()}</span>
         </h2>
         <p>Seu arsenal de estilo está pronto. Próxima missão?</p>
       </UserInfo>

@@ -1,17 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled, { createGlobalStyle } from "styled-components";
 import { useUser } from "@clerk/clerk-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, MapPin, ShieldCheck } from "lucide-react";
+import { motion } from "framer-motion";
+import { Loader2, MapPin, ShieldCheck, Target } from "lucide-react";
 
-// Componentes internos - Verifique se os caminhos estão corretos
 import { Sidebar } from "./Sidebar";
 import WelcomeBanner from "./WelcomeBanner";
-import BookingForm from "./BookingForm";
 import AppointmentList from "./AppointmentList";
-import ProductArsenal from "./ProductArsenal";
-import HistoryList from "./HistoryList";
+import { api } from "../../services/api";
 
+// --- CONFIGURAÇÕES ---
 const COLORS = {
   bg: "#030303",
   card: "rgba(13, 13, 13, 0.7)",
@@ -21,20 +19,11 @@ const COLORS = {
 };
 
 const GlobalStyle = createGlobalStyle`
-  body {
-    background-color: ${COLORS.bg};
-    color: #f0f0f0;
-    font-family: 'Inter', sans-serif;
-    margin: 0;
-  }
-  .sync { 
-    font-family: 'Syncopate', sans-serif; 
-    letter-spacing: 1px; 
-    text-transform: uppercase; 
-  }
+  body { background-color: ${COLORS.bg}; color: #f0f0f0; font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
+  .sync { font-family: 'Syncopate', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
 `;
 
-// --- COMPONENTES ESTILIZADOS ---
+// --- LAYOUT ---
 const RootLayout = styled.div`
   display: flex;
   min-height: 100vh;
@@ -44,9 +33,10 @@ const ContentWrapper = styled.main`
   flex: 1;
   margin-left: 260px;
   padding: 40px;
+  max-width: 1400px;
   @media (max-width: 1024px) {
     margin-left: 0;
-    padding-top: 80px;
+    padding: 100px 20px 40px 20px;
   }
 `;
 
@@ -60,94 +50,75 @@ const DashboardGrid = styled.div`
   }
 `;
 
-// Corrigido para TypeScript: Definindo a interface da prop
-interface TacticalCardProps {
-  $isFluid?: boolean;
-}
-
-const TacticalCard = styled(motion.div)<TacticalCardProps>`
+const TacticalCard = styled(motion.div)`
   background: ${COLORS.card};
   backdrop-filter: blur(12px);
   border: 1px solid ${COLORS.border};
   border-radius: 24px;
   padding: 30px;
-  position: relative;
-
-  /* Se for fluid (produtos), a altura é livre. Se não, é 600px com scroll */
-  ${(props) =>
-    props.$isFluid
-      ? "height: auto; min-height: 600px;"
-      : "height: 600px; overflow-y: auto;"}
-
-  &::-webkit-scrollbar {
-    width: 4px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: ${COLORS.border};
-    border-radius: 10px;
-  }
-`;
-
-const ProtocolHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  span {
-    font-size: 0.6rem;
-    color: ${COLORS.accent};
-  }
+  min-height: 500px;
 `;
 
 // --- COMPONENTE PRINCIPAL ---
-export default function ClientDashboard() {
+interface ClientDashboardProps {
+  children?: React.ReactNode;
+}
+
+export default function ClientDashboard({ children }: ClientDashboardProps) {
   const { user, isLoaded } = useUser();
   const [activeTab, setActiveTab] = useState("overview");
   const [pontos, setPontos] = useState(0);
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  // 1. BUSCA DE DADOS (CORRIGIDA)
+  const fetchDashboardData = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      setLoadingStats(true);
+      // CORREÇÃO: Usando user.id em vez de clerkId
+      const response = await api.get(`/profile/${user.id}`);
+      setPontos(response.data.pontos || 0);
+    } catch (error) {
+      console.error("Erro ao carregar métricas táticas:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (isLoaded && user) {
-      setPontos(7); // Simulação
+      fetchDashboardData();
     }
-  }, [isLoaded, user]);
+  }, [isLoaded, user, fetchDashboardData]);
 
-  if (!isLoaded)
+  // 2. TELA DE CARREGAMENTO
+  if (!isLoaded || loadingStats) {
     return (
       <div
         style={{
           height: "100vh",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           background: "#030303",
+          gap: "20px",
         }}
       >
         <Loader2 className="animate-spin" color={COLORS.accent} size={40} />
+        <span
+          className="sync"
+          style={{ fontSize: "0.6rem", color: COLORS.accent }}
+        >
+          Sincronizando Protocolos...
+        </span>
       </div>
     );
+  }
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "overview":
-        return <AppointmentList />;
-      case "agenda":
-        return (
-          <BookingForm
-            clerkId={user?.id || ""}
-            userName={user?.fullName || ""}
-            onBookingSuccess={() => setActiveTab("overview")}
-          />
-        );
-      case "products":
-        return <ProductArsenal />;
-      case "history":
-        return <HistoryList />;
-      case "profile":
-        return <ProfileView user={user} />;
-      default:
-        return <AppointmentList />;
-    }
-  };
+  // Lógica de ciclo sincronizada
+  const progressoCiclo = pontos > 0 && pontos % 10 === 0 ? 10 : pontos % 10;
 
   return (
     <>
@@ -156,120 +127,124 @@ export default function ClientDashboard() {
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          userName={user?.firstName || "Agente"}
+          userName={user?.firstName}
         />
 
         <ContentWrapper>
           <WelcomeBanner pontos={pontos} />
 
-          <DashboardGrid>
-            <section>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                >
-                  <TacticalCard
-                    $isFluid={
-                      activeTab === "products" || activeTab === "agenda"
-                    }
-                  >
-                    <ProtocolHeader>
-                      <span className="sync">
-                        // PROTOCOLO_{activeTab.toUpperCase()}
-                      </span>
-                    </ProtocolHeader>
-                    {renderTabContent()}
-                  </TacticalCard>
-                </motion.div>
-              </AnimatePresence>
-            </section>
-
-            <aside
-              style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+          {children ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ marginTop: "30px" }}
             >
-              <MiniCard title="COORDENADAS" icon={<MapPin size={16} />}>
-                <p style={{ fontSize: "0.8rem", color: "#ccc" }}>
-                  Unidade Maia - Guarulhos
-                </p>
-              </MiniCard>
-
-              <MiniCard title="STATUS XP" icon={<ShieldCheck size={16} />}>
-                <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>
-                  {pontos} XP
-                </div>
-                <div
-                  style={{
-                    width: "100%",
-                    height: "4px",
-                    background: "#222",
-                    marginTop: "10px",
-                  }}
+              {children}
+            </motion.div>
+          ) : (
+            <DashboardGrid>
+              <section>
+                <TacticalCard
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
                 >
                   <div
                     style={{
-                      width: `${(pontos % 10) * 10}%`,
-                      height: "100%",
-                      background: COLORS.accent,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "20px",
                     }}
-                  />
-                </div>
-              </MiniCard>
-            </aside>
-          </DashboardGrid>
+                  >
+                    <span
+                      className="sync"
+                      style={{ fontSize: "0.6rem", color: COLORS.accent }}
+                    >
+                      // PROTOCOLO_DE_AGENDAMENTOS
+                    </span>
+                    <Target size={14} color={COLORS.accent} />
+                  </div>
+                  <AppointmentList />
+                </TacticalCard>
+              </section>
+
+              <aside
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                }}
+              >
+                <MiniCard title="COORDENADAS" icon={<MapPin size={14} />}>
+                  <p style={{ fontSize: "0.8rem", color: "#ccc", margin: 0 }}>
+                    Unidade Maia - Guarulhos
+                  </p>
+                </MiniCard>
+
+                <MiniCard title="STATUS XP" icon={<ShieldCheck size={14} />}>
+                  <div
+                    style={{
+                      fontSize: "1.8rem",
+                      fontWeight: "900",
+                      color: progressoCiclo === 10 ? "#FFD700" : "#fff",
+                      fontFamily: "Syncopate",
+                    }}
+                  >
+                    {pontos} <span style={{ fontSize: "0.8rem" }}>PTS</span>
+                  </div>
+                  <small
+                    style={{
+                      color:
+                        progressoCiclo === 10 ? "#FFD700" : COLORS.textMuted,
+                      fontSize: "0.65rem",
+                      fontWeight: "bold",
+                      display: "block",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {progressoCiclo === 10
+                      ? "MISSION ACCOMPLISHED: CORTE LIBERADO!"
+                      : `FALTA(M) ${10 - progressoCiclo} CORTE(S) PARA O BÔNUS`}
+                  </small>
+                </MiniCard>
+              </aside>
+            </DashboardGrid>
+          )}
         </ContentWrapper>
       </RootLayout>
     </>
   );
 }
 
-// --- AUXILIARES ---
-function ProfileView({ user }: { user: any }) {
-  return (
-    <div
-      style={{
-        padding: "20px",
-        background: "rgba(255,255,255,0.02)",
-        borderRadius: "12px",
-      }}
-    >
-      <h3 className="sync" style={{ fontSize: "0.9rem" }}>
-        {user?.fullName}
-      </h3>
-      <p style={{ fontSize: "0.7rem", color: COLORS.textMuted }}>
-        {user?.primaryEmailAddress?.emailAddress}
-      </p>
-    </div>
-  );
-}
-
+// --- SUB-COMPONENTE ---
 function MiniCard({ title, icon, children }: any) {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      whileHover={{ scale: 1.02, borderColor: COLORS.accent }}
       style={{
         background: COLORS.card,
-        padding: "20px",
-        borderRadius: "20px",
+        padding: "22px",
+        borderRadius: "24px",
         border: `1px solid ${COLORS.border}`,
+        transition: "all 0.3s ease",
       }}
     >
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "10px",
+          gap: "8px",
           color: COLORS.accent,
-          marginBottom: "10px",
+          marginBottom: "12px",
         }}
       >
-        {icon}{" "}
+        {icon}
         <span className="sync" style={{ fontSize: "0.6rem" }}>
           {title}
         </span>
       </div>
       {children}
-    </div>
+    </motion.div>
   );
 }

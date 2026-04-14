@@ -38,38 +38,7 @@ export const GlobalStyles = createGlobalStyle`
     text-transform: uppercase;
   }
 
-  /* Botão de Elite */
-  button {
-    background: var(--primary-color);
-    color: #fff;
-    font-family: 'Syncopate', sans-serif;
-    font-size: 0.7rem;
-    font-weight: bold;
-    letter-spacing: 1px;
-    border: none;
-    border-radius: 4px;
-    padding: 12px 24px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 15px rgba(225, 29, 72, 0.1);
-    
-    &:hover {
-      background: #f43f5e; /* Um vermelho um pouco mais claro no hover */
-      box-shadow: 0 0 25px var(--primary-glow);
-      transform: translateY(-1px);
-    }
 
-    &:active {
-      transform: translateY(0);
-    }
-
-    &:disabled {
-      background: #1a1a1a;
-      color: #444;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-  }
 
   /* Scrollbar Customizada (Dark Mode) */
   ::-webkit-scrollbar {

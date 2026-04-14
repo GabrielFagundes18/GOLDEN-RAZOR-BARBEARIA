@@ -1,211 +1,313 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import styled from "styled-components";
-import { Loader2, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useFetch } from "../../hooks/useFetch";
+import { useNavigate } from "react-router-dom";
 
-// --- TIPOS ---
+// Ícones
+import { HiOutlineExternalLink, HiSearch } from "react-icons/hi";
+import { FaShoppingCart } from "react-icons/fa";
+
+// --- ESTILOS ---
+
+const FilterSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 40px;
+`;
+
+const SearchBar = styled.div`
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 12px 20px;
+  gap: 15px;
+
+  input {
+    background: none;
+    border: none;
+    color: #fff;
+    width: 100%;
+    outline: none;
+    &::placeholder {
+      color: #444;
+    }
+  }
+  svg {
+    color: #e11d48;
+  }
+`;
+
+const CategoryTabs = styled.div`
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+`;
+
+// O prefixo $ impede que a prop "active" seja passada para o botão HTML
+const Tab = styled.button<{ $active: boolean }>`
+  background: ${(props) =>
+    props.$active ? "#e11d48" : "rgba(255, 255, 255, 0.03)"};
+  color: ${(props) => (props.$active ? "#fff" : "#666")};
+  border: 1px solid
+    ${(props) => (props.$active ? "#e11d48" : "rgba(255, 255, 255, 0.05)")};
+  padding: 8px 18px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.3s;
+  text-transform: uppercase;
+
+  &:hover {
+    border-color: #e11d48;
+  }
+`;
+
+const GridContainer = styled(motion.div)`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 30px;
+`;
+
+const ProductCard = styled(motion.div)<{ $outOfStock: boolean }>`
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  transition: 0.3s;
+  position: relative;
+
+  opacity: ${(props) => (props.$outOfStock ? 0.6 : 1)};
+
+  &:hover {
+    border-color: ${(props) =>
+      props.$outOfStock ? "rgba(255, 255, 255, 0.1)" : "#e11d48"};
+    transform: ${(props) => (props.$outOfStock ? "none" : "translateY(-5px)")};
+  }
+
+  .image-wrapper {
+    height: 180px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+
+    img {
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
+      filter: ${(props) =>
+        props.$outOfStock ? "grayscale(1) brightness(0.6)" : "none"};
+      transition: 0.3s;
+    }
+  }
+`;
+
+const StockBadge = styled.span`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #e11d48;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  z-index: 2;
+`;
+
+const PriceTag = styled.div`
+  font-size: 1.4rem;
+  font-weight: 900;
+  margin-top: auto;
+`;
+
+const MainBtn = styled.button`
+  background: #e11d48;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: 0.3s;
+
+  &:disabled {
+    background: #1a1a1a;
+    color: #444;
+    cursor: not-allowed;
+  }
+
+  &:hover:not(:disabled) {
+    background: #f43f5e;
+  }
+`;
+
+// --- COMPONENTE ---
 
 interface Product {
-  id: number;
+  id: string | number;
   nome: string;
+  marca?: string;
   categoria: string;
-  preco: number;
-  info: string;
+  preco: number | string;
   imagem_url: string;
   em_estoque: boolean;
 }
 
-// --- ESTILOS ---
+export default function ProductArsenal({
+  products = [],
+  loading = false,
+}: {
+  products: Product[];
+  loading?: boolean;
+}) {
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeCategory, setActiveCategory] = useState("TODOS");
 
-const ViewWrapper = styled.div`
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-  box-sizing: border-box;
-`;
+  // Categorias dinâmicas com useMemo para performance
+  const categories = useMemo(() => {
+    return [
+      "TODOS",
+      ...Array.from(new Set(products.map((p) => p.categoria).filter(Boolean))),
+    ];
+  }, [products]);
 
-const FilterContainer = styled.div`
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding: 10px 5px;
-  &::-webkit-scrollbar { display: none; }
-  scrollbar-width: none;
+  // Filtro lógico
+  const filtered = products.filter((p) => {
+    const nome = p.nome?.toLowerCase() || "";
+    const marca = p.marca?.toLowerCase() || "";
+    const term = searchTerm.toLowerCase();
 
-  @media (min-width: 768px) {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-  }
-`;
+    const matchSearch = nome.includes(term) || marca.includes(term);
+    const matchCat =
+      activeCategory === "TODOS" || p.categoria === activeCategory;
 
-// Uso do prefixo $ para propriedades que não devem ir para o HTML
-const CategoryBtn = styled.button<{ $active: boolean }>`
-  background: ${props => props.$active ? "#e11d48" : "rgba(255, 255, 255, 0.05)"};
-  border: 1px solid ${props => props.$active ? "#e11d48" : "rgba(255, 255, 255, 0.1)"};
-  color: ${props => props.$active ? "#fff" : "#888"};
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-family: 'Syncopate', sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease-in-out;
-
-  &:hover {
-    background: #e11d48;
-    color: white;
-  }
-`;
-
-const ProductGrid = styled(motion.div)`
-  display: grid;
-  width: 100%;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const ProductCard = styled(motion.div)`
-  background: #0f0f0f;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  height: 100%;
-`;
-
-const ImageBox = styled.div`
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  background: #1a1a1a;
-  border-radius: 10px;
-  margin-bottom: 15px;
-  overflow: hidden;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-`;
-
-const StatusBadge = styled.span<{ $inStock: boolean }>`
-  position: absolute;
-  top: 30px;
-  right: 30px;
-  /* Uso do $inStock para evitar erro de atributo inválido */
-  background: ${props => props.$inStock ? "#00ff88" : "#ff4444"};
-  color: #000;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: 'Syncopate', sans-serif;
-  font-size: 8px;
-  font-weight: 900;
-  z-index: 2;
-`;
-
-const CardFooter = styled.div`
-  margin-top: auto;
-  padding-top: 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-export default function ProductArsenal() {
-  const { data: products, loading } = useFetch<Product[]>("/produtos");
-  const [activeCat, setActiveCat] = useState("TODOS");
-
-  const cats = products 
-    ? ["TODOS", ...new Set(products.map((p: Product) => p.categoria.toUpperCase()))]
-    : ["TODOS"];
-
-  const filtered = products?.filter((p: Product) => 
-    activeCat === "TODOS" ? true : p.categoria.toUpperCase() === activeCat
-  );
+    return matchSearch && matchCat;
+  });
 
   if (loading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", padding: "100px" }}>
-        <Loader2 className="animate-spin" size={40} color="#e11d48" />
+      <div
+        style={{
+          color: "#fff",
+          textAlign: "center",
+          padding: "50px",
+          fontWeight: "bold",
+        }}
+      >
+        CARREGANDO ARSENAL...
       </div>
     );
   }
 
   return (
-    <ViewWrapper>
-      <FilterContainer>
-        {cats.map((c) => (
-          <CategoryBtn
-            key={c}
-            $active={activeCat === c} // Mudança aqui: $active
-            onClick={() => setActiveCat(c)}
-          >
-            {c}
-          </CategoryBtn>
-        ))}
-      </FilterContainer>
+    <div style={{ padding: "20px", background: "#050505", minHeight: "100vh" }}>
+      <FilterSection>
+        <SearchBar>
+          <HiSearch size={20} />
+          <input
+            placeholder="Procurar no arsenal..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </SearchBar>
 
-      <ProductGrid layout>
+        <CategoryTabs>
+          {categories.map((cat) => (
+            <Tab
+              key={cat}
+              $active={activeCategory === cat}
+              onClick={() => setActiveCategory(cat)}
+            >
+              {cat}
+            </Tab>
+          ))}
+        </CategoryTabs>
+      </FilterSection>
+
+      <GridContainer layout>
         <AnimatePresence mode="popLayout">
-          {filtered?.map((p) => (
+          {filtered.map((product) => (
             <ProductCard
-              key={p.id}
-              layout // Mantém o layout suave durante a filtragem
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+              layout
+              key={product.id}
+              $outOfStock={!product.em_estoque}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.3 }}
             >
-              <StatusBadge $inStock={p.em_estoque}> {/* Mudança aqui: $inStock */}
-                {p.em_estoque ? "READY" : "OUT"}
-              </StatusBadge>
-
-              <ImageBox>
-                <img 
-                  src={p.imagem_url} 
-                  alt={p.nome} 
-                  style={{ opacity: p.em_estoque ? 1 : 0.3 }}
-                />
-              </ImageBox>
-
-              <div style={{ marginBottom: "15px" }}>
-                <h4 style={{ color: "#fff", fontFamily: "Syncopate", fontSize: "12px", margin: "0 0 5px 0" }}>
-                  {p.nome}
-                </h4>
-                <p style={{ color: "#666", fontSize: "12px", margin: 0, lineHeight: "1.4" }}>
-                  {p.info}
-                </p>
+              <div className="image-wrapper">
+                {!product.em_estoque && <StockBadge>ESGOTADO</StockBadge>}
+                <img src={product.imagem_url} alt={product.nome} />
               </div>
 
-              <CardFooter>
-                <div>
-                  <span style={{ color: "#e11d48", fontSize: "8px", fontFamily: "Syncopate", display: "block" }}>
-                    VALOR
-                  </span>
-                  <strong style={{ color: "#fff", fontSize: "18px" }}>
-                    R$ {Number(p.preco).toFixed(2)}
-                  </strong>
-                </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span
+                  style={{
+                    color: "#e11d48",
+                    fontSize: "10px",
+                    fontWeight: "900",
+                  }}
+                >
+                  {product.categoria?.toUpperCase()}
+                </span>
+                <span style={{ color: "#444", fontSize: "10px" }}>
+                  {product.marca}
+                </span>
+              </div>
 
-               
-              </CardFooter>
+              <h3
+                style={{ fontSize: "1.1rem", margin: "5px 0", color: "#fff" }}
+              >
+                {product.nome}
+              </h3>
+
+              <PriceTag style={{ color: product.em_estoque ? "#fff" : "#444" }}>
+                R$ {Number(product.preco).toFixed(2)}
+              </PriceTag>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 50px",
+                  gap: "10px",
+                }}
+              >
+                <MainBtn
+                  disabled={!product.em_estoque}
+                  onClick={() => navigate(`/produtos/${product.id}`)}
+                >
+                  <FaShoppingCart />
+                  {product.em_estoque ? "DETALHES" : "SEM ESTOQUE"}
+                </MainBtn>
+
+                
+              </div>
             </ProductCard>
           ))}
         </AnimatePresence>
-      </ProductGrid>
-    </ViewWrapper>
+      </GridContainer>
+    </div>
   );
 }

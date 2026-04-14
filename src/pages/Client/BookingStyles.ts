@@ -1,89 +1,96 @@
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 
-// Sincronizando com as suas GlobalStyles
 export const THEME = {
-  accent: "var(--primary-color)", // Crimson Red (#e11d48)
-  accentGlow: "var(--primary-glow)", // Glow do Vermelho
-  background: "var(--bg-color)", // Preto Profundo
-  cardBg: "var(--card-color)", // Superfície Obsidian
-  border: "rgba(255, 255, 255, 0.05)", // Borda sutil
-  text: "var(--text-color)",
-  textMuted: "var(--text-muted)",
+  accent: "#e11d48",
+  background: "#050505",
+  cardBg: "#0a0a0a",
+  text: "#ffffff",
 };
 
-export const Container = styled.div`
-  width: 100%;
-  max-width: 450px;
-  margin: 0 auto;
-  color: ${THEME.text};
-  font-family: "Inter", sans-serif;
-
-  /* Scrollbar customizada dentro do container */
-  div::-webkit-scrollbar {
-    width: 4px;
-  }
-  div::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  div::-webkit-scrollbar-thumb {
-    background: #1a1a1a;
-    border-radius: 10px;
-  }
-  div::-webkit-scrollbar-thumb:hover {
-    background: ${THEME.accent};
-  }
+const scanline = keyframes`
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
 `;
 
-export const Card = styled.div<{ $active?: boolean }>`
-  background: ${props => props.$active ? 'rgba(225, 29, 72, 0.1)' : 'rgba(255, 255, 255, 0.02)'};
-  border-radius: 12px;
-  cursor: pointer;
+export const Container = styled.div`
+  background: ${THEME.background};
+  color: ${THEME.text};
+  padding: 20px;
+  border-radius: 20px;
+  max-width: 450px;
+  margin: 0 auto;
+  font-family: "Inter", sans-serif;
   position: relative;
   overflow: hidden;
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    transform: translateY(-2px);
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:
+      linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+      linear-gradient(
+        90deg,
+        rgba(255, 0, 0, 0.06),
+        rgba(0, 255, 0, 0.02),
+        rgba(0, 0, 255, 0.06)
+      );
+    z-index: 2;
+    background-size:
+      100% 2px,
+      3px 100%;
+    pointer-events: none;
   }
 
-  &:active {
-    transform: scale(0.98);
+  .sync {
+    font-family: "Syncopate", sans-serif;
+    letter-spacing: 2px;
   }
 `;
+
 export const ServiceList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 380px; /* Ajuste essa altura conforme necessário */
+  max-height: 350px;
   overflow-y: auto;
-  padding-right: 8px; /* Espaço para a scrollbar não sobrepor o card */
+  padding-right: 5px;
 
-  /* Scrollbar Estilizada (Estilo Cyberpunk/Tático) */
   &::-webkit-scrollbar {
     width: 4px;
   }
   &::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.01);
+    background: #111;
   }
   &::-webkit-scrollbar-thumb {
-    background: #e11d48};
+    background: ${THEME.accent};
     border-radius: 10px;
   }
 `;
 
-export const CalendarGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-  background: ${THEME.cardBg};
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid ${THEME.border};
-`;
+export const Card = styled.div<{ $active?: boolean }>`
+  background: ${(props) =>
+    props.$active ? "rgba(225, 29, 72, 0.1)" : THEME.cardBg};
+  border: 1px solid
+    ${(props) => (props.$active ? THEME.accent : "rgba(255,255,255,0.05)")};
+  padding: 15px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  position: relative;
 
-export const TimeGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-top: 15px;
+  &:hover {
+    border-color: ${THEME.accent};
+    transform: translateX(5px);
+  }
+
+  strong {
+    font-size: 0.85rem;
+    color: ${(props) => (props.$active ? THEME.accent : "#fff")};
+  }
 `;

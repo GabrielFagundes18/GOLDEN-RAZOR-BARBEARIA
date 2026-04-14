@@ -1,436 +1,395 @@
-import React, { useState, useEffect } from "react";
-import styled, { createGlobalStyle } from "styled-components";
-import { useUser } from "@clerk/clerk-react";
+import React, { useEffect, useState } from "react";
+import styled from "styled-components";
+import { useUser, useClerk, UserProfile } from "@clerk/clerk-react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Loader2,
-  MapPin,
-  ShieldCheck,
-  User as UserIcon,
-  Settings,
-  Award,
-  Phone,
-  Calendar,
-  LogOut,
-} from "lucide-react";
+import { Calendar, User, Shield, LogOut } from "lucide-react";
+import { api } from "../../services/api";
 
-// Componentes internos
+// --- IMPORTAÇÕES DOS SEUS COMPONENTES ---
 import { Sidebar } from "./Sidebar";
-import WelcomeBanner from "./WelcomeBanner";
-import BookingForm from "./BookingForm";
-import AppointmentList from "./AppointmentList";
-import ProductArsenal from "./ProductArsenal";
-import HistoryList from "./HistoryList";
 
-// --- CONFIGURAÇÃO DE ESTILO ---
 const COLORS = {
-  bg: "#030303",
-  card: "rgba(13, 13, 13, 0.7)",
-  accent: "#e11d48",
-  border: "rgba(255, 255, 255, 0.05)",
-  textMuted: "#666666",
-  glow: "rgba(225, 29, 72, 0.15)",
+  accent: "#D4AF37",
+  bg: "#0A0A0A",
+  cardBg: "#111111",
+  border: "rgba(212, 175, 55, 0.2)",
+  textMain: "#FFFFFF",
+  textMuted: "#A0A0A0",
 };
 
-const GlobalStyle = createGlobalStyle`
-  body {
-    background-color: ${COLORS.bg};
-    color: #f0f0f0;
-    font-family: 'Inter', sans-serif;
-    margin: 0;
-  }
-  .sync { 
-    font-family: 'Syncopate', sans-serif; 
-    letter-spacing: 1px; 
-    text-transform: uppercase; 
-  }
-`;
+// --- STYLED COMPONENTS ---
 
-// --- COMPONENTES ESTILIZADOS ---
-const RootLayout = styled.div`
+const PageWrapper = styled.div`
   display: flex;
   min-height: 100vh;
+  background: ${COLORS.bg};
+  overflow-x: hidden;
+  
 `;
 
-const ContentWrapper = styled.main`
+const MainContent = styled.main`
   flex: 1;
-  margin-left: 260px;
-  padding: 40px;
-  @media (max-width: 1024px) {
-    margin-left: 0;
-    padding-top: 80px;
-  }
-`;
-
-const DashboardGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 30px;
-  margin-top: 30px;
-  @media (max-width: 1200px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const TacticalCard = styled(motion.div)`
-  background: ${COLORS.card};
-  backdrop-filter: blur(12px);
-  border: 1px solid ${COLORS.border};
-  border-radius: 24px;
-  padding: 30px;
-  min-height: 450px;
-`;
-
-// --- SUB-COMPONENTE: PERFIL DETALHADO ---
-const ProfileContainer = styled.div`
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 25px;
+  gap: 30px;
+  overflow-y: auto;
+
+  @media (min-width: 1024px) {
+    padding: 40px;
+  }
 `;
 
-const ProfileHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid ${COLORS.border};
+const ProfileGrid = styled.div`
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+
+  @media (min-width: 1024px) {
+    grid-template-columns: 320px 1fr;
+  }
 `;
 
-const AvatarCircle = styled.div`
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  border: 2px solid ${COLORS.accent};
-  background: ${COLORS.glow};
-  overflow: hidden;
+const MemberCard = styled(motion.div)`
+  background: ${COLORS.cardBg};
+  border: 1px solid ${COLORS.border};
+  border-radius: 20px;
+  padding: 30px;
+  height: fit-content;
+  text-align: center;
+`;
+
+const AvatarWrapper = styled.div`
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 20px;
   img {
     width: 100%;
     height: 100%;
+    border-radius: 50%;
+    border: 2px solid ${COLORS.accent};
     object-fit: cover;
   }
 `;
 
-const InfoGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 15px;
-`;
-
-const InfoItem = styled.div`
-  background: rgba(255, 255, 255, 0.02);
+const PointsBadge = styled.div`
+  background: linear-gradient(135deg, ${COLORS.accent} 0%, #8a6d3b 100%);
+  color: #000;
   padding: 15px;
   border-radius: 12px;
-  border: 1px solid ${COLORS.border};
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-
-  label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.55rem;
-    color: ${COLORS.accent};
+  margin: 20px 0;
+  h2 {
+    font-size: 26px;
+    margin: 0;
+    font-weight: 900;
   }
   span {
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 800;
+  }
+`;
+
+const NavItem = styled.button<{ active?: boolean }>`
+  width: 100%;
+  background: ${(props) =>
+    props.active ? "rgba(212, 175, 55, 0.15)" : "transparent"};
+  border: none;
+  color: ${(props) => (props.active ? COLORS.accent : COLORS.textMuted)};
+  padding: 14px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: 0.3s;
+  margin-bottom: 8px;
+  font-weight: 600;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
     color: #fff;
   }
 `;
 
-function ProfileView({ user }: { user: any }) {
-  const phone = user?.primaryPhoneNumber?.phoneNumber || "Não informado";
-  const memberSince = user?.createdAt
-    ? new Date(user.createdAt).toLocaleDateString("pt-BR")
-    : "--/--/--";
-  const lastLogin = user?.lastSignInAt
-    ? new Date(user.lastSignInAt).toLocaleDateString("pt-BR")
-    : "Hoje";
+const GlassCard = styled.div`
+  background: ${COLORS.cardBg};
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 25px;
+`;
 
-  return (
-    <ProfileContainer>
-      <ProfileHeader>
-        <AvatarCircle>
-          {user?.imageUrl ? (
-            <img src={user.imageUrl} alt="Avatar" />
-          ) : (
-            <UserIcon size={40} color={COLORS.accent} />
-          )}
-        </AvatarCircle>
-        <div>
-          <h3 className="sync" style={{ margin: 0, fontSize: "1.1rem" }}>
-            {user?.fullName}
-          </h3>
-          <p style={{ margin: 0, fontSize: "0.7rem", color: COLORS.textMuted }}>
-            ID DE ACESSO: {user?.id?.slice(-10).toUpperCase()}
-          </p>
-        </div>
-      </ProfileHeader>
+const StatusTag = styled.span`
+  background: rgba(212, 175, 55, 0.1);
+  color: ${COLORS.accent};
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: bold;
+  text-transform: uppercase;
+`;
 
-      <InfoGrid>
-        <InfoItem>
-          <label className="sync">
-            <Phone size={10} /> WhatsApp / Telefone
-          </label>
-          <span>{phone}</span>
-        </InfoItem>
-        <InfoItem>
-          <label className="sync">
-            <Award size={10} /> E-mail Principal
-          </label>
-          <span>{user?.primaryEmailAddress?.emailAddress}</span>
-        </InfoItem>
-        <InfoItem>
-          <label className="sync">
-            <Calendar size={10} /> Agente desde
-          </label>
-          <span>{memberSince}</span>
-        </InfoItem>
-        <InfoItem>
-          <label className="sync">
-            <ShieldCheck size={10} /> Última Atividade
-          </label>
-          <span>{lastLogin}</span>
-        </InfoItem>
-      </InfoGrid>
+export default function ProfileView() {
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const [activeTab, setActiveTab] = useState<"perfil" | "seguranca">("perfil");
+  const [data, setData] = useState({ pontos: 0, recentAppointments: [] });
+  const [loading, setLoading] = useState(true);
 
-      <button
-        className="sync"
-        style={{
-          background: "transparent",
-          border: `1px solid ${COLORS.border}`,
-          color: "#fff",
-          padding: "12px 24px",
-          borderRadius: "10px",
-          fontSize: "0.6rem",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          width: "fit-content",
-        }}
-        onClick={() => alert("Acesse as configurações do seu perfil no Clerk.")}
-      >
-        <Settings size={14} /> Ajustar Credenciais
-      </button>
-    </ProfileContainer>
-  );
-}
-
-// --- COMPONENTE PRINCIPAL ---
-export default function ClientDashboard() {
-  const { user, isLoaded } = useUser();
-  const [activeTab, setActiveTab] = useState("overview");
-  const [pontos, setPontos] = useState(0);
-
-  // Busca de pontos/XP (vinda do Neon/PostgreSQL futuramente)
   useEffect(() => {
-    if (isLoaded && user) {
-      // Simulação de busca no banco
-      const loadAgentData = async () => {
-        // Exemplo: const res = await fetch(`/api/user/${user.id}`);
-        setPontos(4); // Exemplo de valor inicial
-      };
-      loadAgentData();
-    }
-  }, [isLoaded, user]);
+    const fetchProfileData = async () => {
+      if (!user?.id) return;
+      try {
+        const response = await api.get(`/profile/${user.id}`);
+        setData(response.data);
+      } catch (err) {
+        console.error("Erro ao buscar dados do perfil:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfileData();
+  }, [user]);
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "overview":
-        return <AppointmentList />;
-      case "agenda":
-        return (
-          <BookingForm
-            clerkId={user?.id || ""}
-            userName={user?.fullName || "Agente"}
-            onBookingSuccess={() => setActiveTab("overview")}
-          />
-        );
-      case "products":
-        return <ProductArsenal />;
-      case "history":
-        return <HistoryList />;
-      case "profile":
-        return <ProfileView user={user} />;
-      default:
-        return <AppointmentList />;
-    }
-  };
-
-  if (!isLoaded)
-    return (
-      <div
-        style={{
-          height: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: COLORS.bg,
-        }}
-      >
-        <Loader2 className="animate-spin" color={COLORS.accent} size={42} />
-      </div>
-    );
+  if (!user) return null;
 
   return (
-    <>
-      <GlobalStyle />
-      <RootLayout>
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          userName={user?.firstName}
-        />
+    <PageWrapper>
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        userName={user.firstName || "Operador"}
+      />
 
-        <ContentWrapper>
-          <WelcomeBanner pontos={pontos} />
+      <MainContent>
+        {/* Banner com pontos dinâmicos vindos da API */}
+        
 
-          <DashboardGrid>
-            <section>
-              <AnimatePresence mode="wait">
+        <ProfileGrid>
+          {/* CARTÃO DE IDENTIDADE */}
+          <MemberCard
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <AvatarWrapper>
+              <img src={user.imageUrl} alt="Foto de Perfil" />
+            </AvatarWrapper>
+            <h3 style={{ margin: 0, fontSize: "1.2rem" }}>{user.firstName}</h3>
+            <p
+              style={{
+                color: COLORS.textMuted,
+                fontSize: "13px",
+                marginBottom: "25px",
+              }}
+            >
+              {user.primaryEmailAddress?.emailAddress}
+            </p>
+
+            <PointsBadge>
+              <span>Saldo Golden</span>
+              <h2>{data.pontos}</h2>
+            </PointsBadge>
+
+            <nav>
+              <NavItem
+                active={activeTab === "perfil"}
+                onClick={() => setActiveTab("perfil")}
+              >
+                <User size={18} /> Resumo e Estilo
+              </NavItem>
+              <NavItem
+                active={activeTab === "seguranca"}
+                onClick={() => setActiveTab("seguranca")}
+              >
+                <Shield size={18} /> Conta e Segurança
+              </NavItem>
+              <NavItem
+                onClick={() => signOut()}
+                style={{ color: "#ff4d4d", marginTop: "30px" }}
+              >
+                <LogOut size={18} /> Sair da Conta
+              </NavItem>
+            </nav>
+          </MemberCard>
+
+          {/* CONTEÚDO DINÂMICO */}
+          <section style={{ width: "100%" }}>
+            <AnimatePresence mode="wait">
+              {activeTab === "perfil" ? (
                 <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, y: 12 }}
+                  key="perfil"
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.2 }}
+                  exit={{ opacity: 0, y: -10 }}
                 >
-                  <TacticalCard>
-                    <h2
-                      className="sync"
+                  <h3
+                    style={{
+                      letterSpacing: "2px",
+                      color: COLORS.accent,
+                      marginBottom: "20px",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    MEU HISTÓRICO //
+                  </h3>
+                  <GlassCard>
+                    {loading ? (
+                      <p style={{ color: COLORS.textMuted }}>
+                        Carregando dados...
+                      </p>
+                    ) : data.recentAppointments.length > 0 ? (
+                      data.recentAppointments.map((app: any) => (
+                        <div
+                          key={app.id}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            padding: "18px 0",
+                            borderBottom: "1px solid rgba(255,255,255,0.05)",
+                            alignItems: "center",
+                          }}
+                        >
+                          <div>
+                            <h4 style={{ margin: "0 0 5px 0" }}>
+                              {app.servico}
+                            </h4>
+                            <p
+                              style={{
+                                fontSize: "13px",
+                                color: COLORS.textMuted,
+                                margin: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                              }}
+                            >
+                              <Calendar size={14} />{" "}
+                              {new Date(app.data).toLocaleDateString("pt-BR")}
+                            </p>
+                          </div>
+                          <StatusTag>{app.status}</StatusTag>
+                        </div>
+                      ))
+                    ) : (
+                      <p
+                        style={{
+                          color: COLORS.textMuted,
+                          textAlign: "center",
+                          padding: "10px",
+                        }}
+                      >
+                        Nenhum serviço registrado.
+                      </p>
+                    )}
+                  </GlassCard>
+
+                  <h3
+                    style={{
+                      letterSpacing: "2px",
+                      color: COLORS.accent,
+                      margin: "40px 0 20px 0",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    DADOS CADASTRAIS //
+                  </h3>
+                  <GlassCard>
+                    <div
                       style={{
-                        fontSize: "0.6rem",
-                        color: COLORS.accent,
-                        marginBottom: "25px",
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(180px, 1fr))",
+                        gap: "25px",
                       }}
                     >
-                      // MÓDULO_SISTEMA: {activeTab.toUpperCase()}
-                    </h2>
-                    {renderTabContent()}
-                  </TacticalCard>
+                      <div>
+                        <small
+                          style={{
+                            color: COLORS.accent,
+                            display: "block",
+                            marginBottom: "6px",
+                            fontWeight: 700,
+                          }}
+                        >
+                          NOME COMPLETO
+                        </small>
+                        <span style={{ fontSize: "1.1rem" }}>
+                          {user.fullName}
+                        </span>
+                      </div>
+                      <div>
+                        <small
+                          style={{
+                            color: COLORS.accent,
+                            display: "block",
+                            marginBottom: "6px",
+                            fontWeight: 700,
+                          }}
+                        >
+                          MEMBRO DESDE
+                        </small>
+                        <span style={{ fontSize: "1.1rem" }}>
+                          {new Date(user.createdAt!).getFullYear()}
+                        </span>
+                      </div>
+                    </div>
+                  </GlassCard>
                 </motion.div>
-              </AnimatePresence>
-            </section>
-
-            <aside
-              style={{ display: "flex", flexDirection: "column", gap: "20px" }}
-            >
-              <MiniCard title="LOCALIZAÇÃO" icon={<MapPin size={16} />}>
-                <p
-                  style={{ fontSize: "0.8rem", margin: "5px 0", color: "#888" }}
+              ) : (
+                <motion.div
+                  key="seguranca"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
                 >
-                  Unidade Maia - Guarulhos
-                </p>
-                <button
-                  className="sync"
-                  style={{
-                    width: "100%",
-                    background: COLORS.accent,
-                    border: "none",
-                    color: "#fff",
-                    padding: "10px",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                    fontSize: "0.6rem",
-                    fontWeight: "bold",
-                    marginTop: "10px",
-                  }}
-                  onClick={() =>
-                    window.open("https://maps.google.com", "_blank")
-                  }
-                >
-                  ABRIR MAPA
-                </button>
-              </MiniCard>
-
-              <MiniCard
-                title="PROGRESSO TOTAL"
-                icon={<ShieldCheck size={16} />}
-              >
-                <div
-                  style={{
-                    fontSize: "1.6rem",
-                    fontWeight: "900",
-                    color: "#fff",
-                  }}
-                >
-                  {pontos} XP
-                </div>
-                <div
-                  style={{
-                    fontSize: "0.65rem",
-                    color: COLORS.textMuted,
-                    marginTop: "4px",
-                  }}
-                >
-                  Faltam {10 - (pontos % 10)} para recompensa
-                </div>
-                <div
-                  style={{
-                    width: "100%",
-                    height: "6px",
-                    background: "#1a1a1a",
-                    marginTop: "12px",
-                    borderRadius: "10px",
-                    overflow: "hidden",
-                  }}
-                >
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(pontos % 10) * 10}%` }}
+                  <h3
                     style={{
-                      height: "100%",
-                      background: COLORS.accent,
-                      boxShadow: `0 0 10px ${COLORS.accent}66`,
+                      letterSpacing: "2px",
+                      color: COLORS.accent,
+                      marginBottom: "20px",
+                      fontSize: "0.9rem",
                     }}
-                  />
-                </div>
-              </MiniCard>
-            </aside>
-          </DashboardGrid>
-        </ContentWrapper>
-      </RootLayout>
-    </>
-  );
-}
-
-
-function MiniCard({
-  title,
-  icon,
-  children,
-}: {
-  title: string;
-  icon: any;
-  children: any;
-}) {
-  return (
-    <div
-      style={{
-        background: COLORS.card,
-        padding: "25px",
-        borderRadius: "24px",
-        border: `1px solid ${COLORS.border}`,
-        backdropFilter: "blur(10px)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          color: COLORS.accent,
-          marginBottom: "15px",
-        }}
-      >
-        {icon}{" "}
-        <span className="sync" style={{ fontSize: "0.6rem" }}>
-          {title}
-        </span>
-      </div>
-      {children}
-    </div>
+                  >
+                    CONFIGURAÇÕES DE CONTA //
+                  </h3>
+                  <GlassCard style={{ padding: "10px", overflow: "hidden" }}>
+                    <UserProfile
+                      routing="hash"
+                      appearance={{
+                        elements: {
+                          rootBox: { width: "100%" },
+                          card: {
+                            background: "transparent",
+                            boxShadow: "none",
+                            border: "none",
+                            width: "100%",
+                          },
+                          navbar: { display: "none" },
+                          headerTitle: { color: COLORS.accent },
+                          headerSubtitle: { color: COLORS.textMuted },
+                          userPreviewMainIdentifier: { color: "#fff" },
+                          userPreviewSecondaryIdentifier: {
+                            color: COLORS.textMuted,
+                          },
+                          profileSectionTitleText: { color: COLORS.accent },
+                          formButtonPrimary: {
+                            backgroundColor: COLORS.accent,
+                            color: "#000",
+                            fontWeight: "bold",
+                          },
+                        },
+                      }}
+                    />
+                  </GlassCard>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </section>
+        </ProfileGrid>
+      </MainContent>
+    </PageWrapper>
   );
 }

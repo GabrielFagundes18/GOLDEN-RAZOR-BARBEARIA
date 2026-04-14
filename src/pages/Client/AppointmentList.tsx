@@ -12,7 +12,7 @@ interface Appointment {
   id: number;
   data: string;
   status: string;
-  valor: number | string; // Aceita string do banco e converte depois
+  valor: number | string; 
   servico: {
     name: string;
     price: number;
