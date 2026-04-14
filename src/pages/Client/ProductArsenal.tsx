@@ -1,94 +1,129 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { HiSearch } from "react-icons/hi";
+import { FaShoppingCart, FaArrowRight, FaBoxOpen } from "react-icons/fa";
 
-// Ícones
-import { HiOutlineExternalLink, HiSearch } from "react-icons/hi";
-import { FaShoppingCart } from "react-icons/fa";
-
-// --- ESTILOS ---
+// --- Estilos de Layout ---
 
 const FilterSection = styled.div`
   display: flex;
   flex-direction: column;
   gap: 20px;
   margin-bottom: 40px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 20px 0;
+  background: var(--bg-color, #0a0a0a);
 `;
 
 const SearchBar = styled.div`
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 12px;
   padding: 12px 20px;
   gap: 15px;
+  transition: all 0.3s ease;
+
+  &:focus-within {
+    border-color: var(--primary-color, #00ff88);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 15px var(--primary-glow, rgba(0, 255, 136, 0.3));
+  }
 
   input {
     background: none;
     border: none;
-    color: #fff;
+    color: var(--text-color, #fff);
     width: 100%;
     outline: none;
+    font-size: 0.9rem;
     &::placeholder {
-      color: #444;
+      color: var(--text-dark, #666);
     }
   }
+
   svg {
-    color: #e11d48;
+    color: var(--primary-color, #00ff88);
   }
 `;
 
 const CategoryTabs = styled.div`
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
-`;
-
-// O prefixo $ impede que a prop "active" seja passada para o botão HTML
-const Tab = styled.button<{ $active: boolean }>`
-  background: ${(props) =>
-    props.$active ? "#e11d48" : "rgba(255, 255, 255, 0.03)"};
-  color: ${(props) => (props.$active ? "#fff" : "#666")};
-  border: 1px solid
-    ${(props) => (props.$active ? "#e11d48" : "rgba(255, 255, 255, 0.05)")};
-  padding: 8px 18px;
-  border-radius: 100px;
-  font-size: 10px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: 0.3s;
-  text-transform: uppercase;
-
-  &:hover {
-    border-color: #e11d48;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 `;
 
-const GridContainer = styled(motion.div)`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 30px;
+const Tab = styled.button<{ $active: boolean }>`
+  background: ${(props) =>
+    props.$active
+      ? "var(--primary-color, #00ff88)"
+      : "var(--card-glass, rgba(255,255,255,0.05))"};
+  color: ${(props) => (props.$active ? "#000" : "var(--text-muted, #aaa)")};
+  border: 1px solid
+    ${(props) =>
+      props.$active
+        ? "var(--primary-color, #00ff88)"
+        : "var(--border-color, #333)"};
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.3s;
+  text-transform: uppercase;
+  font-family: "Syncopate", sans-serif;
+
+  &:hover {
+    border-color: var(--primary-color, #00ff88);
+    box-shadow: 0 0 10px var(--primary-glow, rgba(0, 255, 136, 0.3));
+  }
 `;
 
 const ProductCard = styled(motion.div)<{ $outOfStock: boolean }>`
-  background: #0a0a0a;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 24px;
+  background: var(--card-color, #1a1a1a);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 20px;
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  transition: 0.3s;
   position: relative;
+  overflow: hidden;
+  height: 100%;
 
-  opacity: ${(props) => (props.$outOfStock ? 0.6 : 1)};
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(
+      135deg,
+      transparent 50%,
+      rgba(255, 255, 255, 0.03) 50%
+    );
+  }
 
   &:hover {
     border-color: ${(props) =>
-      props.$outOfStock ? "rgba(255, 255, 255, 0.1)" : "#e11d48"};
-    transform: ${(props) => (props.$outOfStock ? "none" : "translateY(-5px)")};
+      props.$outOfStock
+        ? "var(--border-color, #333)"
+        : "var(--primary-color, #00ff88)"};
+    .arrow-icon {
+      transform: translateX(5px);
+      opacity: 1;
+    }
   }
 
   .image-wrapper {
@@ -96,75 +131,82 @@ const ProductCard = styled(motion.div)<{ $outOfStock: boolean }>`
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-bottom: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
     position: relative;
 
     img {
-      max-height: 100%;
+      max-height: 80%;
       object-fit: contain;
-      border-radius: 12px;
       filter: ${(props) =>
-        props.$outOfStock ? "grayscale(1) brightness(0.6)" : "none"};
-      transition: 0.3s;
+        props.$outOfStock ? "grayscale(1) opacity(0.5)" : "none"};
+      transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
   }
 `;
 
-const StockBadge = styled.span`
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #e11d48;
-  color: #fff;
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 1px;
-  z-index: 2;
-`;
-
-const PriceTag = styled.div`
-  font-size: 1.4rem;
-  font-weight: 900;
-  margin-top: auto;
-`;
-
 const MainBtn = styled.button`
-  background: #e11d48;
-  color: #fff;
+  background: var(--primary-color, #00ff88);
+  color: #000;
   border: none;
-  padding: 12px;
-  border-radius: 12px;
-  font-weight: 800;
+  padding: 14px;
+  border-radius: 10px;
+  font-weight: 900;
   cursor: pointer;
-  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   transition: 0.3s;
+  font-family: "Syncopate", sans-serif;
+  font-size: 0.65rem;
 
-  &:disabled {
-    background: #1a1a1a;
-    color: #444;
-    cursor: not-allowed;
+  .arrow-icon {
+    opacity: 0.5;
+    transition: 0.3s;
   }
 
   &:hover:not(:disabled) {
-    background: #f43f5e;
+    background: #fff;
+    box-shadow: 0 0 20px var(--primary-glow, rgba(0, 255, 136, 0.3));
+  }
+
+  &:disabled {
+    background: var(--bg-darker, #111);
+    color: var(--text-dark, #666);
+    cursor: not-allowed;
   }
 `;
 
-// --- COMPONENTE ---
+const EmptyArsenal = styled(motion.div)`
+  grid-column: 1 / -1;
+  padding: 100px 20px;
+  text-align: center;
+  border: 1px dashed var(--border-color, #333);
+  border-radius: 20px;
+  color: var(--text-dark, #666);
 
+  svg {
+    margin-bottom: 15px;
+    opacity: 0.3;
+  }
+  p {
+    font-family: "Syncopate", sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+  }
+`;
+
+// --- Interface ---
 interface Product {
   id: string | number;
-  nome: string;
+  nome?: string;
   marca?: string;
-  categoria: string;
-  preco: number | string;
-  imagem_url: string;
-  em_estoque: boolean;
+  categoria?: string;
+  preco?: number | string;
+  imagem_url?: string;
+  em_estoque?: boolean;
 }
 
 export default function ProductArsenal({
@@ -178,49 +220,50 @@ export default function ProductArsenal({
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("TODOS");
 
-  // Categorias dinâmicas com useMemo para performance
+  // Correção 1: Safe Map para categorias
   const categories = useMemo(() => {
-    return [
-      "TODOS",
-      ...Array.from(new Set(products.map((p) => p.categoria).filter(Boolean))),
-    ];
+    const rawCats =
+      products
+        ?.map((p) => p.categoria)
+        .filter((cat): cat is string => Boolean(cat)) || [];
+    return ["TODOS", ...Array.from(new Set(rawCats))];
   }, [products]);
 
-  // Filtro lógico
-  const filtered = products.filter((p) => {
-    const nome = p.nome?.toLowerCase() || "";
-    const marca = p.marca?.toLowerCase() || "";
-    const term = searchTerm.toLowerCase();
+  // Correção 2: Safe Filter
+  const filtered = useMemo(() => {
+    return products.filter((p) => {
+      const nome = p.nome?.toLowerCase() || "";
+      const marca = p.marca?.toLowerCase() || "";
+      const cat = p.categoria || "";
+      const term = searchTerm.toLowerCase();
 
-    const matchSearch = nome.includes(term) || marca.includes(term);
-    const matchCat =
-      activeCategory === "TODOS" || p.categoria === activeCategory;
+      const matchSearch = nome.includes(term) || marca.includes(term);
+      const matchCat = activeCategory === "TODOS" || cat === activeCategory;
 
-    return matchSearch && matchCat;
-  });
+      return matchSearch && matchCat;
+    });
+  }, [products, searchTerm, activeCategory]);
 
-  if (loading) {
+  if (loading)
     return (
       <div
         style={{
-          color: "#fff",
+          padding: "100px",
           textAlign: "center",
-          padding: "50px",
-          fontWeight: "bold",
+          color: "var(--primary-color, #00ff88)",
         }}
       >
-        CARREGANDO ARSENAL...
+        SINCRONIZANDO INVENTÁRIO...
       </div>
     );
-  }
 
   return (
-    <div style={{ padding: "20px", background: "#050505", minHeight: "100vh" }}>
+    <div style={{ padding: "20px" }}>
       <FilterSection>
         <SearchBar>
           <HiSearch size={20} />
           <input
-            placeholder="Procurar no arsenal..."
+            placeholder="PROCURAR EQUIPAMENTO..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -239,75 +282,146 @@ export default function ProductArsenal({
         </CategoryTabs>
       </FilterSection>
 
-      <GridContainer layout>
+      <motion.div
+        layout
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+          gap: "25px",
+        }}
+      >
         <AnimatePresence mode="popLayout">
-          {filtered.map((product) => (
-            <ProductCard
-              layout
-              key={product.id}
-              $outOfStock={!product.em_estoque}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="image-wrapper">
-                {!product.em_estoque && <StockBadge>ESGOTADO</StockBadge>}
-                <img src={product.imagem_url} alt={product.nome} />
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
+          {filtered.length > 0 ? (
+            filtered.map((product) => (
+              <ProductCard
+                key={product.id}
+                layout
+                $outOfStock={!product.em_estoque}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
               >
-                <span
+                <div className="image-wrapper">
+                  {!product.em_estoque && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        background: "var(--error-color, #ff4444)",
+                        color: "#fff",
+                        padding: "4px 10px",
+                        borderRadius: "4px",
+                        fontSize: "8px",
+                        fontWeight: "900",
+                        zIndex: 10,
+                      }}
+                    >
+                      ESGOTADO
+                    </div>
+                  )}
+                  <img
+                    src={
+                      product.imagem_url || "https://via.placeholder.com/200"
+                    }
+                    alt={product.nome}
+                  />
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "5px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: "var(--primary-color, #00ff88)",
+                        fontSize: "9px",
+                        fontWeight: "900",
+                      }}
+                    >
+                      {product.categoria?.toUpperCase() || "SEM CATEGORIA"}
+                    </span>
+                    <span
+                      style={{
+                        color: "var(--text-dark, #666)",
+                        fontSize: "9px",
+                      }}
+                    >
+                      {product.marca}
+                    </span>
+                  </div>
+                  <h3
+                    style={{
+                      fontSize: "1rem",
+                      color: "#fff",
+                      margin: "0 0 15px 0",
+                    }}
+                  >
+                    {product.nome || "Produto sem nome"}
+                  </h3>
+                </div>
+
+                <div
                   style={{
-                    color: "#e11d48",
-                    fontSize: "10px",
-                    fontWeight: "900",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-end",
+                    marginTop: "20px",
                   }}
                 >
-                  {product.categoria?.toUpperCase()}
-                </span>
-                <span style={{ color: "#444", fontSize: "10px" }}>
-                  {product.marca}
-                </span>
-              </div>
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "0.5rem",
+                        color: "var(--text-dark, #666)",
+                        fontWeight: "900",
+                      }}
+                    >
+                      VALOR
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "1.2rem",
+                        fontWeight: "900",
+                        color: product.em_estoque
+                          ? "var(--success-color, #00ff88)"
+                          : "var(--text-dark, #666)",
+                      }}
+                    >
+                      R$ {Number(product.preco || 0).toFixed(2)}
+                    </div>
+                  </div>
 
-              <h3
-                style={{ fontSize: "1.1rem", margin: "5px 0", color: "#fff" }}
-              >
-                {product.nome}
-              </h3>
-
-              <PriceTag style={{ color: product.em_estoque ? "#fff" : "#444" }}>
-                R$ {Number(product.preco).toFixed(2)}
-              </PriceTag>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 50px",
-                  gap: "10px",
-                }}
-              >
-                <MainBtn
-                  disabled={!product.em_estoque}
-                  onClick={() => navigate(`/produtos/${product.id}`)}
-                >
-                  <FaShoppingCart />
-                  {product.em_estoque ? "DETALHES" : "SEM ESTOQUE"}
-                </MainBtn>
-
-                
-              </div>
-            </ProductCard>
-          ))}
+                  <MainBtn
+                    disabled={!product.em_estoque}
+                    onClick={() => navigate(`/produtos/${product.id}`)}
+                    style={{ width: "120px" }}
+                  >
+                    {product.em_estoque ? (
+                      <>
+                        DETALHES <FaArrowRight className="arrow-icon" />
+                      </>
+                    ) : (
+                      "OFFLINE"
+                    )}
+                  </MainBtn>
+                </div>
+              </ProductCard>
+            ))
+          ) : (
+            <EmptyArsenal
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <FaBoxOpen size={40} />
+              <p>NENHUM EQUIPAMENTO ENCONTRADO NO ARQUIVO.</p>
+            </EmptyArsenal>
+          )}
         </AnimatePresence>
-      </GridContainer>
+      </motion.div>
     </div>
   );
 }

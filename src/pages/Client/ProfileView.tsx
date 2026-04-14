@@ -5,26 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, User, Shield, LogOut } from "lucide-react";
 import { api } from "../../services/api";
 
-// --- IMPORTAÇÕES DOS SEUS COMPONENTES ---
 import { Sidebar } from "./Sidebar";
-
-const COLORS = {
-  accent: "#D4AF37",
-  bg: "#0A0A0A",
-  cardBg: "#111111",
-  border: "rgba(212, 175, 55, 0.2)",
-  textMain: "#FFFFFF",
-  textMuted: "#A0A0A0",
-};
-
-// --- STYLED COMPONENTS ---
 
 const PageWrapper = styled.div`
   display: flex;
   min-height: 100vh;
-  background: ${COLORS.bg};
+  background: var(--bg-color);
   overflow-x: hidden;
-  
 `;
 
 const MainContent = styled.main`
@@ -34,9 +21,12 @@ const MainContent = styled.main`
   flex-direction: column;
   gap: 30px;
   overflow-y: auto;
+  /* Ajuste para Sidebar Desktop se necessário */
+  margin-left: 260px;
 
-  @media (min-width: 1024px) {
-    padding: 40px;
+  @media (max-width: 1024px) {
+    margin-left: 0;
+    padding: 100px 20px 40px 20px;
   }
 `;
 
@@ -54,8 +44,8 @@ const ProfileGrid = styled.div`
 `;
 
 const MemberCard = styled(motion.div)`
-  background: ${COLORS.cardBg};
-  border: 1px solid ${COLORS.border};
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
   border-radius: 20px;
   padding: 30px;
   height: fit-content;
@@ -70,17 +60,24 @@ const AvatarWrapper = styled.div`
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    border: 2px solid ${COLORS.accent};
+    border: 2px solid var(--gold-color);
     object-fit: cover;
+    box-shadow: 0 0 15px var(--gold-glow);
   }
 `;
 
 const PointsBadge = styled.div`
-  background: linear-gradient(135deg, ${COLORS.accent} 0%, #8a6d3b 100%);
+  background: linear-gradient(
+    135deg,
+    var(--gold-color) 0%,
+    var(--gold-bright) 100%
+  );
   color: #000;
   padding: 15px;
   border-radius: 12px;
   margin: 20px 0;
+  box-shadow: 0 10px 20px -5px var(--gold-glow);
+
   h2 {
     font-size: 26px;
     margin: 0;
@@ -90,15 +87,17 @@ const PointsBadge = styled.div`
     font-size: 10px;
     text-transform: uppercase;
     font-weight: 800;
+    letter-spacing: 1px;
   }
 `;
 
 const NavItem = styled.button<{ active?: boolean }>`
   width: 100%;
   background: ${(props) =>
-    props.active ? "rgba(212, 175, 55, 0.15)" : "transparent"};
+    props.active ? "var(--primary-glow)" : "transparent"};
   border: none;
-  color: ${(props) => (props.active ? COLORS.accent : COLORS.textMuted)};
+  color: ${(props) =>
+    props.active ? "var(--primary-color)" : "var(--text-muted)"};
   padding: 14px;
   border-radius: 10px;
   display: flex;
@@ -110,21 +109,22 @@ const NavItem = styled.button<{ active?: boolean }>`
   font-weight: 600;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
+    background: var(--scanline-color);
+    color: var(--text-color);
   }
 `;
 
 const GlassCard = styled.div`
-  background: ${COLORS.cardBg};
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--card-glass);
+  border: 1px solid var(--border-color);
   border-radius: 15px;
   padding: 25px;
+  backdrop-filter: blur(10px);
 `;
 
 const StatusTag = styled.span`
-  background: rgba(212, 175, 55, 0.1);
-  color: ${COLORS.accent};
+  background: var(--primary-glow);
+  color: var(--primary-color);
   font-size: 10px;
   padding: 4px 10px;
   border-radius: 6px;
@@ -165,11 +165,7 @@ export default function ProfileView() {
       />
 
       <MainContent>
-        {/* Banner com pontos dinâmicos vindos da API */}
-        
-
         <ProfileGrid>
-          {/* CARTÃO DE IDENTIDADE */}
           <MemberCard
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -177,10 +173,18 @@ export default function ProfileView() {
             <AvatarWrapper>
               <img src={user.imageUrl} alt="Foto de Perfil" />
             </AvatarWrapper>
-            <h3 style={{ margin: 0, fontSize: "1.2rem" }}>{user.firstName}</h3>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: "1.2rem",
+                color: "var(--text-color)",
+              }}
+            >
+              {user.firstName}
+            </h3>
             <p
               style={{
-                color: COLORS.textMuted,
+                color: "var(--text-muted)",
                 fontSize: "13px",
                 marginBottom: "25px",
               }}
@@ -208,14 +212,13 @@ export default function ProfileView() {
               </NavItem>
               <NavItem
                 onClick={() => signOut()}
-                style={{ color: "#ff4d4d", marginTop: "30px" }}
+                style={{ color: "var(--error-color)", marginTop: "30px" }}
               >
                 <LogOut size={18} /> Sair da Conta
               </NavItem>
             </nav>
           </MemberCard>
 
-          {/* CONTEÚDO DINÂMICO */}
           <section style={{ width: "100%" }}>
             <AnimatePresence mode="wait">
               {activeTab === "perfil" ? (
@@ -228,17 +231,18 @@ export default function ProfileView() {
                   <h3
                     style={{
                       letterSpacing: "2px",
-                      color: COLORS.accent,
+                      color: "var(--primary-color)",
                       marginBottom: "20px",
                       fontSize: "0.9rem",
+                      fontWeight: 900,
                     }}
                   >
                     MEU HISTÓRICO //
                   </h3>
                   <GlassCard>
                     {loading ? (
-                      <p style={{ color: COLORS.textMuted }}>
-                        Carregando dados...
+                      <p style={{ color: "var(--text-muted)" }}>
+                        Acessando banco de dados...
                       </p>
                     ) : data.recentAppointments.length > 0 ? (
                       data.recentAppointments.map((app: any) => (
@@ -248,18 +252,23 @@ export default function ProfileView() {
                             display: "flex",
                             justifyContent: "space-between",
                             padding: "18px 0",
-                            borderBottom: "1px solid rgba(255,255,255,0.05)",
+                            borderBottom: "1px solid var(--border-color)",
                             alignItems: "center",
                           }}
                         >
                           <div>
-                            <h4 style={{ margin: "0 0 5px 0" }}>
+                            <h4
+                              style={{
+                                margin: "0 0 5px 0",
+                                color: "var(--text-color)",
+                              }}
+                            >
                               {app.servico}
                             </h4>
                             <p
                               style={{
                                 fontSize: "13px",
-                                color: COLORS.textMuted,
+                                color: "var(--text-muted)",
                                 margin: 0,
                                 display: "flex",
                                 alignItems: "center",
@@ -276,12 +285,12 @@ export default function ProfileView() {
                     ) : (
                       <p
                         style={{
-                          color: COLORS.textMuted,
+                          color: "var(--text-muted)",
                           textAlign: "center",
                           padding: "10px",
                         }}
                       >
-                        Nenhum serviço registrado.
+                        Nenhum registro encontrado no arsenal.
                       </p>
                     )}
                   </GlassCard>
@@ -289,9 +298,10 @@ export default function ProfileView() {
                   <h3
                     style={{
                       letterSpacing: "2px",
-                      color: COLORS.accent,
+                      color: "var(--primary-color)",
                       margin: "40px 0 20px 0",
                       fontSize: "0.9rem",
+                      fontWeight: 900,
                     }}
                   >
                     DADOS CADASTRAIS //
@@ -308,30 +318,42 @@ export default function ProfileView() {
                       <div>
                         <small
                           style={{
-                            color: COLORS.accent,
+                            color: "var(--primary-color)",
                             display: "block",
                             marginBottom: "6px",
-                            fontWeight: 700,
+                            fontWeight: 900,
+                            fontSize: "10px",
                           }}
                         >
                           NOME COMPLETO
                         </small>
-                        <span style={{ fontSize: "1.1rem" }}>
+                        <span
+                          style={{
+                            fontSize: "1.1rem",
+                            color: "var(--text-color)",
+                          }}
+                        >
                           {user.fullName}
                         </span>
                       </div>
                       <div>
                         <small
                           style={{
-                            color: COLORS.accent,
+                            color: "var(--primary-color)",
                             display: "block",
                             marginBottom: "6px",
-                            fontWeight: 700,
+                            fontWeight: 900,
+                            fontSize: "10px",
                           }}
                         >
                           MEMBRO DESDE
                         </small>
-                        <span style={{ fontSize: "1.1rem" }}>
+                        <span
+                          style={{
+                            fontSize: "1.1rem",
+                            color: "var(--text-color)",
+                          }}
+                        >
                           {new Date(user.createdAt!).getFullYear()}
                         </span>
                       </div>
@@ -348,9 +370,10 @@ export default function ProfileView() {
                   <h3
                     style={{
                       letterSpacing: "2px",
-                      color: COLORS.accent,
+                      color: "var(--primary-color)",
                       marginBottom: "20px",
                       fontSize: "0.9rem",
+                      fontWeight: 900,
                     }}
                   >
                     CONFIGURAÇÕES DE CONTA //
@@ -368,17 +391,28 @@ export default function ProfileView() {
                             width: "100%",
                           },
                           navbar: { display: "none" },
-                          headerTitle: { color: COLORS.accent },
-                          headerSubtitle: { color: COLORS.textMuted },
-                          userPreviewMainIdentifier: { color: "#fff" },
-                          userPreviewSecondaryIdentifier: {
-                            color: COLORS.textMuted,
+                          headerTitle: { color: "var(--primary-color)" },
+                          headerSubtitle: { color: "var(--text-muted)" },
+                          userPreviewMainIdentifier: {
+                            color: "var(--text-color)",
                           },
-                          profileSectionTitleText: { color: COLORS.accent },
+                          userPreviewSecondaryIdentifier: {
+                            color: "var(--text-muted)",
+                          },
+                          profileSectionTitleText: {
+                            color: "var(--primary-color)",
+                          },
                           formButtonPrimary: {
-                            backgroundColor: COLORS.accent,
-                            color: "#000",
+                            backgroundColor: "var(--primary-color)",
+                            color: "#fff",
                             fontWeight: "bold",
+                            textTransform: "uppercase",
+                          },
+                          formFieldLabel: { color: "var(--text-muted)" },
+                          formFieldInput: {
+                            background: "var(--bg-darker)",
+                            border: "1px solid var(--border-color)",
+                            color: "var(--text-color)",
                           },
                         },
                       }}

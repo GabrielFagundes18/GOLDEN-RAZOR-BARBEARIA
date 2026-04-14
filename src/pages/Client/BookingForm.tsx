@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Scissors,
@@ -23,7 +23,7 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { api } from "../../services/api";
-import { Container, Card, THEME, ServiceList } from "./BookingStyles";
+import { Container, Card, ServiceList } from "./BookingStyles";
 
 interface BookingFormProps {
   onBookingSuccess?: () => void;
@@ -134,7 +134,7 @@ export default function BookingForm({
       };
 
       await api.post("/agendar", payload);
-      await loadProfile(); // Atualiza pontos após agendar
+      await loadProfile();
       if (onBookingSuccess) onBookingSuccess();
       setStep(5);
     } catch (err: any) {
@@ -181,19 +181,19 @@ export default function BookingForm({
             textAlign: "center",
             cursor: isPast ? "not-allowed" : "pointer",
             borderRadius: "8px",
-            background: isSelected ? THEME.accent : "transparent",
+            background: isSelected ? "var(--primary-color)" : "transparent",
             color: isPast
-              ? "#222"
+              ? "var(--text-dark)"
               : isSelected
-                ? "#fff"
+                ? "var(--text-color)"
                 : isCurrentMonth
                   ? "#eee"
-                  : "#444",
+                  : "var(--text-dark)",
             fontSize: "0.8rem",
             opacity: isPast ? 0.2 : 1,
             transition: "0.2s",
             border: isSelected
-              ? `1px solid ${THEME.accent}`
+              ? `1px solid var(--primary-color)`
               : "1px solid transparent",
           }}
         >
@@ -216,9 +216,17 @@ export default function BookingForm({
           minHeight: "300px",
         }}
       >
-        <Loader2 className="animate-spin" size={32} color={THEME.accent} />
+        <Loader2
+          className="animate-spin"
+          size={32}
+          color="var(--primary-color)"
+        />
         <p
-          style={{ marginTop: "15px", fontSize: "0.7rem", color: "#666" }}
+          style={{
+            marginTop: "15px",
+            fontSize: "0.7rem",
+            color: "var(--text-muted)",
+          }}
           className="sync"
         >
           SINCRONIZANDO PROTOCOLOS...
@@ -229,13 +237,12 @@ export default function BookingForm({
 
   return (
     <Container>
-      {/* BARRA DE FIDELIDADE */}
       <div
         style={{
           marginBottom: "25px",
           padding: "18px",
-          background: "rgba(255,255,255,0.02)",
-          border: "1px solid rgba(255,255,255,0.05)",
+          background: "var(--card-glass)",
+          border: "1px solid var(--border-color)",
           borderRadius: "16px",
         }}
       >
@@ -247,13 +254,18 @@ export default function BookingForm({
             alignItems: "center",
           }}
         >
-          <span className="sync" style={{ fontSize: "0.6rem", color: "#666" }}>
+          <span
+            className="sync"
+            style={{ fontSize: "0.6rem", color: "var(--text-muted)" }}
+          >
             LOYALTY_STATUS
           </span>
           <span
             style={{
               fontSize: "0.75rem",
-              color: isRewardEligible ? "#FFD700" : "#fff",
+              color: isRewardEligible
+                ? "var(--gold-bright)"
+                : "var(--text-color)",
               fontWeight: "900",
               fontFamily: "Syncopate",
             }}
@@ -265,7 +277,7 @@ export default function BookingForm({
           style={{
             width: "100%",
             height: "6px",
-            background: "#111",
+            background: "var(--bg-darker)",
             borderRadius: "10px",
             overflow: "hidden",
           }}
@@ -275,7 +287,12 @@ export default function BookingForm({
             animate={{ width: `${Math.min((userPoints / 10) * 100, 100)}%` }}
             style={{
               height: "100%",
-              background: isRewardEligible ? "#FFD700" : THEME.accent,
+              background: isRewardEligible
+                ? "var(--gold-color)"
+                : "var(--primary-color)",
+              boxShadow: isRewardEligible
+                ? "0 0 10px var(--gold-glow)"
+                : "0 0 10px var(--primary-glow)",
             }}
           />
         </div>
@@ -294,7 +311,7 @@ export default function BookingForm({
                 className="sync"
                 style={{
                   fontSize: "0.65rem",
-                  color: THEME.accent,
+                  color: "var(--primary-color)",
                   marginBottom: "15px",
                 }}
               >
@@ -310,18 +327,30 @@ export default function BookingForm({
                     >
                       <Scissors
                         size={18}
-                        color={THEME.accent}
+                        color="var(--primary-color)"
                         style={{ marginRight: "12px" }}
                       />
                       <div style={{ flex: 1 }}>
                         <strong style={{ display: "block" }}>
                           {s.name?.toUpperCase()}
                         </strong>
-                        <p style={{ fontSize: "0.6rem", opacity: 0.5 }}>
+                        <p
+                          style={{
+                            fontSize: "0.6rem",
+                            opacity: 0.5,
+                            color: "var(--text-muted)",
+                          }}
+                        >
                           DURAÇÃO: 40 MIN
                         </p>
                       </div>
-                      <span className="sync" style={{ fontSize: "0.8rem" }}>
+                      <span
+                        className="sync"
+                        style={{
+                          fontSize: "0.8rem",
+                          color: "var(--text-color)",
+                        }}
+                      >
                         R$ {Number(s.price).toFixed(0)}
                       </span>
                     </Card>
@@ -331,7 +360,7 @@ export default function BookingForm({
                     style={{
                       textAlign: "center",
                       fontSize: "0.7rem",
-                      color: "#444",
+                      color: "var(--text-dark)",
                     }}
                   >
                     NENHUM SERVIÇO DISPONÍVEL
@@ -347,7 +376,7 @@ export default function BookingForm({
                 className="sync"
                 style={{
                   fontSize: "0.65rem",
-                  color: THEME.accent,
+                  color: "var(--primary-color)",
                   marginBottom: "15px",
                 }}
               >
@@ -361,7 +390,7 @@ export default function BookingForm({
                 >
                   <User
                     size={18}
-                    color={THEME.accent}
+                    color="var(--primary-color)"
                     style={{ marginRight: "10px" }}
                   />
                   <strong>{b.name.toUpperCase()}</strong>
@@ -376,7 +405,7 @@ export default function BookingForm({
                 className="sync"
                 style={{
                   fontSize: "0.65rem",
-                  color: THEME.accent,
+                  color: "var(--primary-color)",
                   marginBottom: "15px",
                 }}
               >
@@ -392,7 +421,11 @@ export default function BookingForm({
               >
                 <button
                   onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                  style={{ background: "none", border: "none", color: "#fff" }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "var(--text-color)",
+                  }}
                 >
                   <ChevronLeft />
                 </button>
@@ -401,7 +434,11 @@ export default function BookingForm({
                 </span>
                 <button
                   onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                  style={{ background: "none", border: "none", color: "#fff" }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "var(--text-color)",
+                  }}
                 >
                   <ChevronRight />
                 </button>
@@ -433,9 +470,12 @@ export default function BookingForm({
                       borderRadius: "8px",
                       fontSize: "0.7rem",
                       fontWeight: "bold",
-                      background: form.time === t ? THEME.accent : "#0a0a0a",
-                      color: "#fff",
-                      border: "1px solid rgba(255,255,255,0.05)",
+                      background:
+                        form.time === t
+                          ? "var(--primary-color)"
+                          : "var(--card-color)",
+                      color: "var(--text-color)",
+                      border: "1px solid var(--border-color)",
                       opacity: occupiedTimes.includes(t) ? 0.2 : 1,
                       cursor: occupiedTimes.includes(t)
                         ? "not-allowed"
@@ -454,9 +494,9 @@ export default function BookingForm({
               style={{
                 textAlign: "center",
                 padding: "30px",
-                border: `1px solid ${THEME.accent}`,
+                border: `1px solid var(--primary-color)`,
                 borderRadius: "16px",
-                background: "rgba(225, 29, 72, 0.05)",
+                background: "var(--primary-glow)",
               }}
             >
               <h3
@@ -479,7 +519,9 @@ export default function BookingForm({
                 <p
                   style={{
                     marginTop: "15px",
-                    color: isRewardEligible ? "#FFD700" : "#fff",
+                    color: isRewardEligible
+                      ? "var(--gold-bright)"
+                      : "var(--text-color)",
                     fontSize: "1rem",
                     fontWeight: "bold",
                   }}
@@ -497,14 +539,14 @@ export default function BookingForm({
             <div style={{ textAlign: "center", padding: "40px 20px" }}>
               <CheckCircle
                 size={50}
-                color="#22c55e"
+                color="var(--success-color)"
                 style={{ marginBottom: "20px" }}
               />
               <h2
                 className="sync"
                 style={{
                   fontSize: "0.9rem",
-                  color: "#fff",
+                  color: "var(--text-color)",
                   marginBottom: "10px",
                 }}
               >
@@ -513,7 +555,7 @@ export default function BookingForm({
               <p
                 style={{
                   fontSize: "0.7rem",
-                  color: "#666",
+                  color: "var(--text-muted)",
                   marginBottom: "30px",
                 }}
               >
@@ -523,8 +565,8 @@ export default function BookingForm({
                 onClick={resetForm}
                 style={{
                   width: "100%",
-                  background: "#fff",
-                  color: "#000",
+                  background: "var(--text-color)",
+                  color: "var(--bg-color)",
                   borderRadius: "12px",
                   padding: "15px",
                   border: "none",
@@ -548,11 +590,11 @@ export default function BookingForm({
               onClick={() => setStep(step - 1)}
               style={{
                 flex: 1,
-                background: "rgba(255,255,255,0.05)",
-                color: "#fff",
+                background: "var(--card-glass)",
+                color: "var(--text-color)",
                 borderRadius: "12px",
                 padding: "15px",
-                border: "1px solid rgba(255,255,255,0.1)",
+                border: "1px solid var(--border-bright)",
                 cursor: "pointer",
               }}
             >
@@ -569,8 +611,8 @@ export default function BookingForm({
             onClick={step === 4 ? handleFinish : () => setStep(step + 1)}
             style={{
               flex: 2,
-              background: THEME.accent,
-              color: "#fff",
+              background: "var(--primary-color)",
+              color: "var(--text-color)",
               borderRadius: "12px",
               padding: "15px",
               border: "none",
@@ -593,7 +635,7 @@ export default function BookingForm({
       {error && (
         <p
           style={{
-            color: THEME.accent,
+            color: "var(--error-color)",
             fontSize: "0.7rem",
             marginTop: "15px",
             textAlign: "center",

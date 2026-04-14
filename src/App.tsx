@@ -13,7 +13,7 @@ import HistoryPage from "./pages/Client/HistoryList";
 import BookingForm from "./pages/Client/BookingForm";
 import ProfileView from "./pages/Client/ProfileView";
 
-// 1. Componente de Proteção Tipado
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
@@ -39,12 +39,10 @@ export default function App() {
     <BrowserRouter>
       <GlobalStyles />
       <Routes>
-        {/* Tela Pública */}
         <Route path="/" element={<Home />} />
         <Route path="/login/*" element={<LoginPage />} />
         <Route path="/cadastro/*" element={<SignUpPage />} />
 
-        {/* Rotas de Produtos (Públicas ou Privadas conforme sua escolha) */}
         <Route
           path="/produtos"
           element={
@@ -62,7 +60,6 @@ export default function App() {
           }
         />
 
-        {/* Rotas Protegidas */}
         <Route
           path="/dashboardClient"
           element={
@@ -87,7 +84,6 @@ export default function App() {
             <ProtectedRoute>
               <ClientDashboard>
                 <div style={{ maxWidth: "700px", margin: "0 auto" }}>
-                  {/* O uso do optional chaining (?) é vital aqui para o TS não reclamar */}
                   <BookingForm
                     clerkId={user?.id || ""}
                     userName={user?.firstName || "Cliente"}

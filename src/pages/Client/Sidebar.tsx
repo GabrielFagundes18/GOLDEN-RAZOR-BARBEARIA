@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import  { useEffect, useState } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserButton } from "@clerk/clerk-react";
@@ -14,20 +14,6 @@ import {
   X,
 } from "lucide-react";
 
-// 1. TEMA REFINADO
-const THEME = {
-  bg: "#030303",
-  surface: "rgba(10, 10, 10, 0.8)",
-  accent: "#e11d48",
-  accent_low: "rgba(225, 29, 72, 0.1)",
-  border: "rgba(255, 255, 255, 0.03)",
-  text_main: "#ffffff",
-  text_dim: "#555555",
-  glass: "blur(15px)",
-};
-
-// --- STYLED COMPONENTS RESPONSIVOS ---
-
 const MobileHeader = styled.div`
   display: none;
   @media (max-width: 1024px) {
@@ -37,8 +23,8 @@ const MobileHeader = styled.div`
     left: 0;
     right: 0;
     height: 60px;
-    background: ${THEME.bg};
-    border-bottom: 1px solid ${THEME.border};
+    background: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
     padding: 0 20px;
     align-items: center;
     justify-content: space-between;
@@ -50,6 +36,7 @@ const MobileHeader = styled.div`
     font-size: 0.7rem;
     font-weight: 800;
     letter-spacing: 2px;
+    color: var(--text-color);
   }
 `;
 
@@ -59,8 +46,8 @@ const SidebarNav = styled.nav<{ $isOpen: boolean }>`
   position: fixed;
   left: 0;
   top: 0;
-  background: ${THEME.bg};
-  border-right: 1px solid ${THEME.border};
+  background: var(--bg-color);
+  border-right: 1px solid var(--border-color);
   padding: 40px 16px;
   display: flex;
   flex-direction: column;
@@ -93,7 +80,7 @@ const CloseButton = styled.button`
     right: 16px;
     background: none;
     border: none;
-    color: ${THEME.text_dim};
+    color: var(--text-muted);
     cursor: pointer;
   }
 `;
@@ -106,7 +93,7 @@ const LogoSection = styled.div`
     font-size: 0.9rem;
     font-weight: 800;
     letter-spacing: 3px;
-    color: #fff;
+    color: var(--text-color);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -114,13 +101,14 @@ const LogoSection = styled.div`
       content: "";
       width: 4px;
       height: 18px;
-      background: ${THEME.accent};
+      background: var(--primary-color);
       display: inline-block;
+      box-shadow: 0 0 10px var(--primary-glow);
     }
   }
   .status {
     font-size: 0.5rem;
-    color: ${THEME.text_dim};
+    color: var(--text-muted);
     margin-top: 8px;
     letter-spacing: 1.5px;
     text-transform: uppercase;
@@ -135,9 +123,11 @@ const NavContainer = styled.div`
 `;
 
 const NavButton = styled(motion.button)<{ $active: boolean }>`
-  background: ${(props) => (props.$active ? THEME.accent_low : "transparent")};
+  background: ${(props) =>
+    props.$active ? "var(--primary-glow)" : "transparent"};
   border: none;
-  color: ${(props) => (props.$active ? "#fff" : THEME.text_dim)};
+  color: ${(props) =>
+    props.$active ? "var(--text-color)" : "var(--text-muted)"};
   padding: 14px 16px;
   display: flex;
   align-items: center;
@@ -164,8 +154,8 @@ const NavButton = styled(motion.button)<{ $active: boolean }>`
   }
 
   &:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-color);
+    background: var(--scanline-color);
   }
 
   ${(props) =>
@@ -177,15 +167,15 @@ const NavButton = styled(motion.button)<{ $active: boolean }>`
       left: 0;
       width: 2px;
       height: 40%;
-      background: ${THEME.accent};
-      box-shadow: 0 0 10px ${THEME.accent};
+      background: var(--primary-color);
+      box-shadow: 0 0 10px var(--primary-color);
     }
   `}
 `;
 
 const FooterAccount = styled.div`
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid ${THEME.border};
+  background: var(--card-color);
+  border: 1px solid var(--border-bright);
   padding: 16px;
   border-radius: 16px;
   display: flex;
@@ -198,19 +188,21 @@ const FooterAccount = styled.div`
     overflow: hidden;
     span {
       display: block;
-      font-size: 0.7rem;
-      color: #fff;
+      font-size: 0.9rem;
+      color: var(--text-color);
       font-weight: 600;
     }
     small {
       display: block;
       font-size: 0.55rem;
-      color: ${THEME.accent};
+      color: var(--primary-color);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
     }
   }
 `;
-
-// --- COMPONENTE FINAL ---
 
 export function Sidebar({ activeTab, setActiveTab, userName }: any) {
   const [isOpen, setIsOpen] = useState(false);
@@ -225,7 +217,7 @@ export function Sidebar({ activeTab, setActiveTab, userName }: any) {
       path: "/dashboardClient",
     },
     { id: "agenda", label: "Agendamento", icon: Scissors, path: "/agenda" },
-    { id: "products", label: "Arsenal", icon: Package, path: "/produtos" },
+    { id: "products", label: "Produtos", icon: Package, path: "/produtos" },
     { id: "history", label: "Histórico", icon: History, path: "/history" },
     {
       id: "profile",
@@ -235,7 +227,6 @@ export function Sidebar({ activeTab, setActiveTab, userName }: any) {
     },
   ];
 
-  // Fecha o menu ao mudar de rota (importante para mobile)
   useEffect(() => {
     setIsOpen(false);
   }, [location.pathname]);
@@ -247,18 +238,20 @@ export function Sidebar({ activeTab, setActiveTab, userName }: any) {
 
   return (
     <>
-      {/* Header visível apenas no Mobile */}
       <MobileHeader>
         <span className="logo-text">GOLDEN RAZOR</span>
         <button
           onClick={() => setIsOpen(true)}
-          style={{ background: "none", border: "none", color: "#fff" }}
+          style={{
+            background: "none",
+            border: "none",
+            color: "var(--text-color)",
+          }}
         >
           <Menu size={24} />
         </button>
       </MobileHeader>
 
-      {/* Overlay para fechar ao clicar fora */}
       <AnimatePresence>
         {isOpen && (
           <Overlay
@@ -280,7 +273,6 @@ export function Sidebar({ activeTab, setActiveTab, userName }: any) {
           style={{ cursor: "pointer" }}
         >
           <div className="brand">GOLDEN RAZOR</div>
-          <div className="status">Sytem Status: Online</div>
         </LogoSection>
 
         <NavContainer>
@@ -310,15 +302,19 @@ export function Sidebar({ activeTab, setActiveTab, userName }: any) {
         <FooterAccount>
           <UserButton
             afterSignOutUrl="/"
-            appearance={{ elements: { avatarBox: "w-8 h-8" } }}
+            appearance={{
+              elements: {
+                avatarBox: "w-12 h-12 rounded-full",
+              },
+            }}
           />
           <div
             className="user-info"
-            onClick={() => navigate("/dashboardClient/profile")}
+            onClick={() => navigate("/perfil")}
             style={{ cursor: "pointer" }}
           >
-            <span>{userName || "Membro"}</span>
-            <small>Elite Member</small>
+            <span>{userName}</span>
+            <small>VER PERFIL</small>
           </div>
         </FooterAccount>
       </SidebarNav>

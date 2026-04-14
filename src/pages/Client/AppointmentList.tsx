@@ -7,12 +7,11 @@ import { Calendar, User, Clock, Scissors, Hash } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-// --- INTERFACES ---
 interface Appointment {
   id: number;
   data: string;
   status: string;
-  valor: number | string; 
+  valor: number | string;
   servico: {
     name: string;
     price: number;
@@ -22,7 +21,6 @@ interface Appointment {
   };
 }
 
-// --- ESTILOS ---
 const Container = styled.div`
   display: flex;
   flex-direction: column;
@@ -31,17 +29,21 @@ const Container = styled.div`
 `;
 
 const Card = styled(motion.div)<{ $isReward?: boolean }>`
-  background: linear-gradient(145deg, #0a0a0a 0%, #0f0f0f 100%);
+  background: linear-gradient(145deg, var(--card-color) 0%, #0f0f0f 100%);
   padding: 20px;
   border-radius: 16px;
   border: 1px solid
-    ${(props) =>
-      props.$isReward ? "rgba(255, 215, 0, 0.3)" : "rgba(255, 255, 255, 0.05)"};
+    ${(props) => (props.$isReward ? "var(--gold-glow)" : "var(--border-color)")};
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 15px;
+  gap: 20px;
   position: relative;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    padding: 25px 20px 20px 20px;
+  }
 
   &::before {
     content: "";
@@ -50,9 +52,12 @@ const Card = styled(motion.div)<{ $isReward?: boolean }>`
     top: 20%;
     height: 60%;
     width: 3px;
-    background: ${(props) => (props.$isReward ? "#FFD700" : "#e11d48")};
+    background: ${(props) =>
+      props.$isReward ? "var(--gold-color)" : "var(--primary-color)"};
     border-radius: 0 4px 4px 0;
-    box-shadow: 0 0 10px ${(props) => (props.$isReward ? "#FFD700" : "#e11d48")};
+    box-shadow: 0 0 10px
+      ${(props) =>
+        props.$isReward ? "var(--gold-color)" : "var(--primary-color)"};
   }
 `;
 
@@ -68,49 +73,60 @@ const Header = styled.div`
   gap: 4px;
   span.label {
     font-size: 0.55rem;
-    color: #666;
+    color: var(--text-muted);
     font-weight: 900;
     letter-spacing: 1.5px;
   }
   h3 {
     margin: 0;
     font-size: 1.1rem;
-    color: #fff;
+    color: var(--text-color);
     display: flex;
     align-items: center;
     gap: 8px;
+    line-height: 1.2;
   }
 `;
 
 const MetaGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 12px;
   margin-top: 5px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const BadgeItem = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  padding: 6px 12px;
+  gap: 10px;
+  background: var(--scanline-color);
+  padding: 8px 12px;
   border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+
   svg {
-    color: #e11d48;
+    color: var(--primary-color);
+    flex-shrink: 0;
   }
+
   div {
     display: flex;
     flex-direction: column;
     span.title {
       font-size: 0.6rem;
-      color: #444;
+      color: var(--text-dark);
       text-transform: uppercase;
+      font-weight: 700;
     }
     span.value {
       font-size: 0.75rem;
       color: #bbb;
       font-weight: 500;
+      white-space: nowrap;
     }
   }
 `;
@@ -120,23 +136,35 @@ const PriceTag = styled.div`
   flex-direction: column;
   align-items: flex-end;
   justify-content: space-between;
+  gap: 15px;
+
+  @media (max-width: 600px) {
+    flex-direction: row;
+    align-items: center;
+    border-top: 1px solid var(--border-color);
+    padding-top: 15px;
+    margin-top: 5px;
+  }
+
   .price {
     font-family: "Syncopate", sans-serif;
-    color: #22c55e;
+    color: var(--success-color);
     font-size: 0.9rem;
     font-weight: bold;
   }
+
   .status-pill {
-    background: rgba(255, 255, 255, 0.05);
-    color: #eee;
-    padding: 4px 8px;
+    background: var(--border-color);
+    color: var(--text-color);
+    padding: 6px 10px;
     border-radius: 6px;
     font-size: 0.55rem;
     font-weight: 900;
     display: flex;
     align-items: center;
-    gap: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 6px;
+    border: 1px solid var(--border-bright);
+    white-space: nowrap;
   }
 `;
 
@@ -159,7 +187,10 @@ export default function AppointmentList() {
   if (loading)
     return (
       <div style={{ padding: "40px", textAlign: "center" }}>
-        <span className="sync" style={{ color: "#444", fontSize: "0.7rem" }}>
+        <span
+          className="sync"
+          style={{ color: "var(--text-dark)", fontSize: "0.7rem" }}
+        >
           ESCANEANDO RADAR...
         </span>
       </div>
@@ -167,7 +198,11 @@ export default function AppointmentList() {
   if (error)
     return (
       <div
-        style={{ color: "#e11d48", padding: "20px", textAlign: "center" }}
+        style={{
+          color: "var(--error-color)",
+          padding: "20px",
+          textAlign: "center",
+        }}
         className="sync"
       >
         ERRO NA CONEXÃO COM O QG.
@@ -178,10 +213,10 @@ export default function AppointmentList() {
     return (
       <div
         style={{
-          color: "#444",
+          color: "var(--text-dark)",
           padding: "40px",
           textAlign: "center",
-          border: "1px dashed #222",
+          border: "1px dashed var(--border-bright)",
           borderRadius: "12px",
         }}
       >
@@ -195,7 +230,6 @@ export default function AppointmentList() {
   return (
     <Container>
       {activeAppointments.map((app) => {
-        // CONVERSÃO SEGURA: Garante que tratamos o valor como número
         const valorNumerico = Number(app.valor);
         const isFidelity = valorNumerico === 0;
 
@@ -210,13 +244,15 @@ export default function AppointmentList() {
               <Header>
                 <span className="sync label">
                   {isFidelity
-                    ? "⭐ RECOMPENSA ATIVA"
+                    ? "RECOMPENSA ATIVA"
                     : `AGENTE: ${user?.firstName?.toUpperCase()}`}
                 </span>
                 <h3>
                   <Scissors
                     size={18}
-                    color={isFidelity ? "#FFD700" : "#e11d48"}
+                    color={
+                      isFidelity ? "var(--gold-bright)" : "var(--primary-color)"
+                    }
                   />
                   {app.servico?.name}
                 </h3>
@@ -260,13 +296,16 @@ export default function AppointmentList() {
               </div>
               <div style={{ textAlign: "right" }}>
                 <span
-                  style={{ fontSize: "0.5rem", color: "#444" }}
+                  style={{ fontSize: "0.5rem", color: "var(--text-dark)" }}
                   className="sync"
                 >
                   INVESTIMENTO
                 </span>
                 {isFidelity ? (
-                  <div className="price" style={{ color: "#FFD700" }}>
+                  <div
+                    className="price"
+                    style={{ color: "var(--gold-bright)" }}
+                  >
                     CORTE PONTO
                   </div>
                 ) : (

@@ -6,185 +6,189 @@ import { useFetch } from "../../hooks/useFetch";
 
 import {
   HiOutlineChevronLeft,
-  HiOutlineShieldCheck,
   HiOutlineLightningBolt,
-  HiOutlineTruck,
   HiStar,
-  HiCube,
+  HiInformationCircle,
 } from "react-icons/hi";
-import { FaShoppingCart, FaYoutube, FaWhatsapp } from "react-icons/fa";
+import { FaYoutube, FaWhatsapp } from "react-icons/fa";
 
-// --- ANIMAÇÕES ---
 const float = keyframes`
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
-  100% { transform: translateY(0px); }
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(1deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
 `;
 
-// --- ESTILOS ---
+const pulse = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
+  70% { box-shadow: 0 0 0 15px rgba(0, 255, 136, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+`;
 
 const PageWrapper = styled.div`
   min-height: 100vh;
-  background: radial-gradient(circle at top right, #0a0a0a 0%, #030303 100%);
-  color: #fff;
-  padding: 60px 40px;
+  background: var(--bg-color, #0a0a0a);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  color: var(--text-color, #ffffff);
+  padding: 60px 20px;
   display: flex;
   justify-content: center;
-  overflow-x: hidden;
+
   @media (max-width: 768px) {
-    padding: 20px;
+    padding: 30px 15px;
   }
 `;
 
-const ImageSection = styled.div`
+const ImageContainer = styled.div`
   position: relative;
-  background: rgba(255, 255, 255, 0.01);
-  border-radius: 48px;
-  padding: 80px;
+  background: radial-gradient(
+    circle,
+    rgba(0, 255, 136, 0.1) 0%,
+    transparent 70%
+  );
+  border-radius: 40px;
+  padding: 40px;
+  border: 1px solid var(--border-color, #333);
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  height: fit-content;
-
-  .glow-bg {
-    position: absolute;
-    width: 300px;
-    height: 300px;
-    background: #e11d48;
-    filter: blur(150px);
-    opacity: 0.15;
-    z-index: 0;
-  }
+  width: 100%;
 
   img {
-    z-index: 1;
-    max-width: 100%;
-    max-height: 500px;
+    width: 100%;
+    max-width: 450px;
+    height: auto;
     object-fit: contain;
-    filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.9));
+    filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.5));
     animation: ${float} 6s ease-in-out infinite;
   }
-`;
 
-const SpecCard = styled.div`
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 24px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-
-  .spec-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 10px;
-    border-radius: 12px;
-    background: rgba(0, 0, 0, 0.2);
-    label {
-      font-size: 9px;
-      color: #555;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    span {
-      font-size: 13px;
-      color: #ddd;
-      font-weight: 600;
+  @media (max-width: 768px) {
+    padding: 20px;
+    img {
+      max-width: 300px;
     }
   }
 `;
 
-const TrustGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-  margin-top: 10px;
-
-  .trust-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    text-align: center;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-
-    svg {
-      color: #e11d48;
-      font-size: 20px;
-    }
-    span {
-      font-size: 10px;
-      font-weight: 700;
-      color: #666;
-      text-transform: uppercase;
-    }
-  }
-`;
-
-const MainActionButton = styled(motion.button)`
-  background: #e11d48;
-  color: #fff;
+const BaseButton = styled(motion.button)`
   border: none;
   height: 65px;
   border-radius: 20px;
   font-weight: 900;
-  font-size: 1rem;
-  letter-spacing: 1px;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 15px;
+  gap: 12px;
   cursor: pointer;
-  box-shadow: 0 10px 40px rgba(225, 29, 72, 0.3);
-  transition: 0.3s;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  width: 100%;
 
-  &:hover {
-    background: #f43f5e;
-    transform: translateY(-2px);
-  }
   &:disabled {
-    background: #222;
+    background: #222 !important;
+    color: #555 !important;
     cursor: not-allowed;
-    box-shadow: none;
-    color: #444;
+    animation: none !important;
+    box-shadow: none !important;
   }
 `;
 
-// --- COMPONENTE ---
+const PurchaseButton = styled(BaseButton)`
+  background: var(--primary-color, #00ff88);
+  color: #000;
+  box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+  animation: ${(props) => (props.disabled ? "none" : pulse)} 2s infinite;
+
+  &:hover:not(:disabled) {
+    background: #ffffff;
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(255, 255, 255, 0.2);
+  }
+`;
+
+const Badge = styled.span<{ $type?: "gold" | "primary" }>`
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  background: ${(props) =>
+    props.$type === "gold"
+      ? "rgba(255, 215, 0, 0.1)"
+      : "rgba(0, 255, 136, 0.1)"};
+  color: ${(props) => (props.$type === "gold" ? "#ffd700" : "#00ff88")};
+  border: 1px solid
+    ${(props) => (props.$type === "gold" ? "#ffd70044" : "#00ff8844")};
+`;
+
+const SpecGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 10px 0;
+`;
+
+const SpecItem = styled(motion.div)`
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px;
+  border-radius: 12px;
+;
+
+  label {
+    display: block;
+    font-size: 9px;
+    color: #888;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  span {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+  }
+`;
 
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: product, loading, error } = useFetch<any>(`/produtos/${id}`);
 
-  // Função para lidar com o "clique de compra"
   const handlePurchase = () => {
     if (!product) return;
-
-    // Aqui você pode redirecionar para o WhatsApp com uma mensagem automática
     const message = encodeURIComponent(
-      `Olá! Tenho interesse no equipamento: ${product.nome}`,
+      `SOLICITAÇÃO DE EQUIPAMENTO\nID: ${product.id}\nITEM: ${product.nome}`,
     );
-    window.open(`https://wa.me/SEUNUMEROAQUI?text=${message}`, "_blank");
+    window.open(`https://wa.me/5511999999999?text=${message}`, "_blank");
   };
 
   if (loading)
     return (
       <PageWrapper>
-        <div style={{ textAlign: "center" }}>
+        <div style={{ textAlign: "center", paddingTop: "100px" }}>
           <HiOutlineLightningBolt
-            size={40}
-            color="#e11d48"
+            size={50}
+            color="#00ff88"
             className="spin-slow"
           />
-          <p className="sync">SINCRONIZANDO ARSENAL...</p>
+          <h2
+            className="sync"
+            style={{
+              fontSize: "14px",
+              marginTop: "20px",
+              letterSpacing: "2px",
+            }}
+          >
+            SCANNING DATABASE...
+          </h2>
         </div>
       </PageWrapper>
     );
@@ -192,198 +196,176 @@ export default function ProductDetails() {
   if (error || !product)
     return (
       <PageWrapper>
-        <div style={{ textAlign: "center" }}>
-          <h2 className="sync">EQUIPAMENTO NÃO LOCALIZADO</h2>
-          <MainActionButton
-            onClick={() => navigate("/produtos")}
-            style={{ marginTop: "20px", padding: "0 30px" }}
-          >
+        <div
+          style={{
+            textAlign: "center",
+            maxWidth: "400px",
+            paddingTop: "100px",
+          }}
+        >
+          <HiInformationCircle size={60} color="#ff4444" />
+          <h2 className="sync" style={{ margin: "20px 0" }}>
+            SINAL PERDIDO
+          </h2>
+          <p style={{ color: "#888", marginBottom: "30px" }}>
+            Equipamento não localizado no inventário.
+          </p>
+          <PurchaseButton onClick={() => navigate("/produtos")}>
             VOLTAR AO ARSENAL
-          </MainActionButton>
+          </PurchaseButton>
         </div>
       </PageWrapper>
     );
 
   return (
     <PageWrapper>
-      <div style={{ maxWidth: "1300px", width: "100%" }}>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{ maxWidth: "1100px", width: "100%" }}
+      >
         <button
           onClick={() => navigate("/produtos")}
           style={{
             background: "none",
             border: "none",
-            color: "#444",
+            color: "#666",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
-            gap: "10px",
+            gap: "8px",
             marginBottom: "30px",
-            fontSize: "12px",
             fontWeight: "900",
+            fontSize: "12px",
           }}
         >
-          <HiOutlineChevronLeft size={18} /> VOLTAR AO ARSENAL
+          <HiOutlineChevronLeft size={18} /> VOLTAR PARA PRODUTOS
         </button>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
-            gap: "60px",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "40px",
+            alignItems: "start",
           }}
         >
-          <ImageSection>
-            <div className="glow-bg" />
-            <motion.img
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              src={product.imagem_url}
-              alt={product.nome}
-            />
-          </ImageSection>
+          <div style={{ position: "sticky", top: "40px" }}>
+            <ImageContainer>
+              <img src={product.imagem_url} alt={product.nome} />
+            </ImageContainer>
+          </div>
 
           <div
             style={{ display: "flex", flexDirection: "column", gap: "25px" }}
           >
-            <div>
-              <div
-                style={{ display: "flex", gap: "10px", marginBottom: "15px" }}
-              >
-                <span
-                  style={{
-                    background: "#e11d48",
-                    padding: "4px 12px",
-                    borderRadius: "100px",
-                    fontSize: "10px",
-                    fontWeight: "900",
-                  }}
-                >
-                  {product.marca?.toUpperCase() || "ELITE"}
-                </span>
-                <span
-                  style={{
-                    background: "rgba(255,255,255,0.05)",
-                    color: "#facc15",
-                    padding: "4px 12px",
-                    borderRadius: "100px",
-                    fontSize: "10px",
-                    fontWeight: "900",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "5px",
-                  }}
-                >
-                  <HiStar /> {product.avaliacao || "5.0"}
-                </span>
-              </div>
-              <h1
-                className="sync"
-                style={{
-                  fontSize: "3rem",
-                  fontWeight: "900",
-                  margin: 0,
-                  lineHeight: 1,
-                }}
-              >
-                {product.nome}
-              </h1>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <Badge>{product.marca || "ELITE"}</Badge>
+              <Badge $type="gold">
+                <HiStar /> {product.avaliacao || "5.0"}
+              </Badge>
             </div>
+
+            <h1
+              className="sync"
+              style={{
+                fontSize: "clamp(2rem, 5vw, 3.5rem)",
+                lineHeight: "1.1",
+              }}
+            >
+              {product.nome}
+            </h1>
 
             <p
               style={{
-                color: "#777",
+                color: "#aaa",
                 fontSize: "1rem",
-                lineHeight: "1.6",
+                lineHeight: "1.7",
                 margin: 0,
               }}
             >
-              {product.descricao_longa ||
-                product.info ||
-                "Equipamento tático de alta performance, projetado para durabilidade extrema e precisão superior em qualquer cenário de operação."}
+              {product.descricao_longa || product.descricao}
             </p>
 
-            <div
-              className="sync"
-              style={{ fontSize: "2.5rem", fontWeight: "900" }}
-            >
-              <span
+            <div>
+              <label
                 style={{
-                  fontSize: "1.2rem",
-                  color: "#e11d48",
-                  marginRight: "10px",
+                  fontSize: "10px",
+                  color: "#00ff88",
+                  fontWeight: "900",
+                  letterSpacing: "1px",
                 }}
               >
-                R$
-              </span>
-              {Number(product.preco).toFixed(2)}
+                INVESTIMENTO TÁTICO
+              </label>
+              <div
+                className="sync"
+                style={{
+                  fontSize: "clamp(2rem, 4vw, 3rem)",
+                  fontWeight: "900",
+                  marginTop: "5px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "1.2rem",
+                    opacity: 0.5,
+                    marginRight: "5px",
+                  }}
+                >
+                  R$
+                </span>
+                {Number(product.preco).toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                })}
+              </div>
             </div>
 
-            {/* Especificações Técnicas */}
             {product.especificacoes && (
-              <SpecCard>
-                {Object.entries(product.especificacoes).map(
-                  ([key, value]: any) => (
-                    <div className="spec-item" key={key}>
-                      <label>{key}</label>
-                      <span>{value}</span>
-                    </div>
-                  ),
-                )}
-              </SpecCard>
+              <div>
+                <label
+                  style={{
+                    fontSize: "10px",
+                    color: "#666",
+                    fontWeight: "900",
+                    display: "block",
+                    marginBottom: "10px",
+                  }}
+                >
+                  ESPECIFICAÇÕES TÉCNICAS
+                </label>
+                <SpecGrid>
+                  {Object.entries(product.especificacoes).map(
+                    ([key, value]: any, i) => (
+                      <SpecItem
+                        key={key}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                      >
+                        <label>{key.replace(/_/g, " ")}</label>
+                        <span>{value}</span>
+                      </SpecItem>
+                    ),
+                  )}
+                </SpecGrid>
+              </div>
             )}
 
-            {/* Grid de Confiança / Benefícios */}
-            <TrustGrid>
-              <div className="trust-item">
-                <HiOutlineShieldCheck />
-                <span>
-                  Garantia
-                  <br />
-                  Vitalícia
-                </span>
-              </div>
-              <div className="trust-item">
-                <HiOutlineTruck />
-                <span>
-                  Entrega
-                  <br />
-                  Tática
-                </span>
-              </div>
-              <div className="trust-item">
-                <HiCube />
-                <span>
-                  Pronta
-                  <br />
-                  Entrega
-                </span>
-              </div>
-            </TrustGrid>
-
-            {/* Ações de Compra/Contato */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 70px",
-                gap: "15px",
-                marginTop: "10px",
-              }}
-            >
-              <MainActionButton
+            <div style={{ display: "flex", gap: "12px", marginTop: "10px" }}>
+              <PurchaseButton
                 onClick={handlePurchase}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
                 disabled={!product.em_estoque}
+                whileTap={{ scale: 0.97 }}
               >
                 {product.em_estoque ? (
                   <>
-                    <FaWhatsapp size={22} />
-                    SOLICITAR EQUIPAMENTO
+                    <FaWhatsapp size={20} /> SOLICITAR ITEM
                   </>
                 ) : (
-                  "FORA DE ESTOQUE"
+                  "ITEM ESGOTADO"
                 )}
-              </MainActionButton>
+              </PurchaseButton>
 
               {product.video_url && (
                 <a
@@ -391,22 +373,25 @@ export default function ProductDetails() {
                   target="_blank"
                   rel="noreferrer"
                   style={{
-                    background: "#111",
+                    width: "80px",
+                    height: "65px",
+                    background: "rgba(255, 68, 68, 0.1)",
                     borderRadius: "20px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "#e11d48",
-                    border: "1px solid #333",
+                    color: "#ff4444",
+                    border: "1px solid rgba(255, 68, 68, 0.2)",
+                    transition: "all 0.3s ease",
                   }}
                 >
-                  <FaYoutube size={24} />
+                  <FaYoutube size={26} />
                 </a>
               )}
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </PageWrapper>
   );
 }

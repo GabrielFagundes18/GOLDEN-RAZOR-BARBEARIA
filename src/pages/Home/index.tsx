@@ -1,17 +1,14 @@
-import React, { useEffect, useState } from "react";
+import  { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 import { motion, animate, useMotionValue, useTransform } from "framer-motion";
 import { useAuth } from "@clerk/clerk-react";
 import { ChevronRight, MapPin, Clock, Camera, Star } from "lucide-react";
 
-// Importando sua instância do axios configurada
 import { api } from "../../services/api";
-
-import { HomeGlobalStyle, THEME, shine } from "./HomeStyles";
+import { HomeGlobalStyle, shine } from "./HomeStyles";
 import { MainButton, PriceCard } from "./HomeComponents";
 
-// --- STYLED COMPONENTS DE LAYOUT ---
 
 const Hero = styled.section`
   height: 100vh;
@@ -22,7 +19,7 @@ const Hero = styled.section`
   text-align: center;
   position: relative;
   background:
-    linear-gradient(rgba(0, 0, 0, 0.4), ${THEME.bg}),
+    linear-gradient(rgba(0, 0, 0, 0.4), var(--bg-color)),
     url("https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070&auto=format&fit=crop");
   background-size: cover;
   background-position: center;
@@ -35,7 +32,12 @@ const Brand = styled.h1`
   font-weight: 900;
   letter-spacing: -6px;
   line-height: 0.9;
-  background: linear-gradient(90deg, #fff, ${THEME.accent}, #fff);
+  background: linear-gradient(
+    90deg,
+    var(--text-color),
+    var(--primary-color),
+    var(--text-color)
+  );
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -46,14 +48,14 @@ const Brand = styled.h1`
 const StatsBar = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  background: #000;
+  background: var(--bg-darker);
   padding: 80px 10%;
-  border-bottom: 1px solid ${THEME.border};
+  border-bottom: 1px solid var(--border-color);
 `;
 
 const StatLabel = styled.p`
   font-size: 0.55rem;
-  color: ${THEME.accent};
+  color: var(--primary-color);
   letter-spacing: 4px;
   font-weight: 900;
   margin-top: 5px;
@@ -66,7 +68,7 @@ const GalleryGrid = styled.section`
   grid-template-rows: repeat(2, 350px);
   gap: 20px;
   padding: 100px 10%;
-  background: ${THEME.bg};
+  background: var(--bg-color);
 
   @media (max-width: 1100px) {
     grid-template-columns: repeat(2, 1fr);
@@ -77,7 +79,7 @@ const GalleryGrid = styled.section`
     position: relative;
     overflow: hidden;
     border-radius: 4px;
-    border: 1px solid ${THEME.border};
+    border: 1px solid var(--border-color);
     &:nth-child(1) {
       grid-column: span 2;
       grid-row: span 2;
@@ -106,7 +108,7 @@ const GalleryGrid = styled.section`
     span {
       font-family: "Syncopate";
       font-size: 0.7rem;
-      color: ${THEME.accent};
+      color: var(--primary-color);
       letter-spacing: 3px;
       transform: translateY(20px);
       transition: 0.4s;
@@ -127,8 +129,6 @@ const GalleryGrid = styled.section`
   }
 `;
 
-// --- COMPONENTE DE NÚMERO ANIMADO ---
-
 function AnimatedNumber({ value }: { value: number }) {
   const count = useMotionValue(0);
   const rounded = useTransform(count, (latest) => Math.round(latest));
@@ -141,18 +141,17 @@ function AnimatedNumber({ value }: { value: number }) {
   return (
     <motion.h4
       style={{
-        color: "#fff",
+        color: "var(--text-color)",
         fontSize: "3.5rem",
         fontWeight: 200,
         marginBottom: "5px",
+        fontFamily: "Syncopate",
       }}
     >
       {rounded}
     </motion.h4>
   );
 }
-
-// --- COMPONENTE PRINCIPAL ---
 
 export default function Home() {
   const { isSignedIn } = useAuth();
@@ -179,7 +178,6 @@ export default function Home() {
     <>
       <HomeGlobalStyle />
 
-      {/* HERO SECTION */}
       <Hero>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -189,13 +187,13 @@ export default function Home() {
           <span
             style={{
               letterSpacing: "12px",
-              color: "#fff",
+              color: "var(--text-color)",
               fontSize: "0.6rem",
               fontWeight: 900,
               opacity: 0.5,
             }}
           >
-           UMA EXPERIÊNCIA EXCLUSIVA
+            UMA EXPERIÊNCIA EXCLUSIVA
           </span>
           <Brand>
             GOLDEN
@@ -204,7 +202,7 @@ export default function Home() {
           </Brand>
           <p
             style={{
-              color: "#888",
+              color: "var(--text-muted)",
               letterSpacing: "10px",
               fontSize: "0.8rem",
               fontWeight: 300,
@@ -229,7 +227,6 @@ export default function Home() {
         </motion.div>
       </Hero>
 
-      {/* STATS BAR DINÂMICA */}
       <StatsBar>
         <div style={{ textAlign: "center" }}>
           <AnimatedNumber value={data.stats.totalCuts} />
@@ -249,7 +246,7 @@ export default function Home() {
         <div style={{ textAlign: "center" }}>
           <h4
             style={{
-              color: "#fff",
+              color: "var(--text-color)",
               fontSize: "3.5rem",
               fontWeight: 200,
               marginBottom: "5px",
@@ -257,24 +254,28 @@ export default function Home() {
               alignItems: "center",
               justifyContent: "center",
               gap: "8px",
+              fontFamily: "Syncopate",
             }}
           >
             {data.stats.rating}{" "}
-            <Star size={24} fill={THEME.accent} color={THEME.accent} />
+            <Star
+              size={24}
+              fill="var(--primary-color)"
+              color="var(--primary-color)"
+            />
           </h4>
           <StatLabel>AVALIAÇÃO GOOGLE</StatLabel>
         </div>
       </StatsBar>
 
-      {/* SERVICES SECTION (PRODUTOS) */}
-      <section style={{ padding: "150px 10%", background: THEME.bg }}>
+      <section style={{ padding: "150px 10%", background: "var(--bg-color)" }}>
         <h2
           style={{
             textAlign: "center",
             marginBottom: "80px",
             letterSpacing: "8px",
             fontSize: "0.8rem",
-            color: THEME.accent,
+            color: "var(--primary-color)",
           }}
         >
           NOSSO ARSENAL
@@ -300,7 +301,7 @@ export default function Home() {
             <p
               style={{
                 textAlign: "center",
-                color: "#444",
+                color: "var(--text-dark)",
                 width: "100%",
                 gridColumn: "1/-1",
               }}
@@ -311,7 +312,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* GALLERY BENTO GRID */}
       <GalleryGrid>
         <div className="photo-wrapper">
           <div
@@ -363,12 +363,11 @@ export default function Home() {
         </div>
       </GalleryGrid>
 
-      {/* FOOTER */}
       <footer
         style={{
-          background: "#000",
+          background: "var(--bg-darker)",
           padding: "120px 10% 60px",
-          borderTop: `1px solid ${THEME.border}`,
+          borderTop: `1px solid var(--border-color)`,
         }}
       >
         <div
@@ -392,7 +391,7 @@ export default function Home() {
           <div>
             <h4
               style={{
-                color: THEME.accent,
+                color: "var(--primary-color)",
                 fontSize: "0.65rem",
                 letterSpacing: "3px",
                 marginBottom: "25px",
@@ -403,7 +402,7 @@ export default function Home() {
             <a
               href="#"
               style={{
-                color: "#fff",
+                color: "var(--text-color)",
                 textDecoration: "none",
                 display: "flex",
                 alignItems: "center",
@@ -422,6 +421,7 @@ export default function Home() {
             textAlign: "center",
             opacity: 0.2,
             fontSize: "0.6rem",
+            color: "var(--text-color)",
             letterSpacing: "5px",
           }}
         >
@@ -431,8 +431,6 @@ export default function Home() {
     </>
   );
 }
-
-// --- AUXILIARES ---
 
 function FooterSection({
   icon,
@@ -447,7 +445,7 @@ function FooterSection({
     <div>
       <h4
         style={{
-          color: THEME.accent,
+          color: "var(--primary-color)",
           fontSize: "0.65rem",
           letterSpacing: "3px",
           marginBottom: "25px",
@@ -459,12 +457,12 @@ function FooterSection({
         style={{
           display: "flex",
           gap: "15px",
-          color: "#888",
+          color: "var(--text-muted)",
           fontSize: "0.9rem",
           alignItems: "center",
         }}
       >
-        <span style={{ color: "#fff" }}>{icon}</span> {text}
+        <span style={{ color: "var(--text-color)" }}>{icon}</span> {text}
       </p>
     </div>
   );

@@ -9,26 +9,27 @@ const Container = styled.div`
   align-items: center;
   justify-content: center;
   background-color: var(--bg-color);
-  
-  /* Efeito de Grid (Linhas de fundo sutis) */
-  background-image: 
-    linear-gradient(to right, #491818 1px, transparent 1px),
-    linear-gradient(to bottom, #491818 1px, transparent 1px);
-  background-size: 40px 40px;
 
-  /* Máscara radial para o Grid sumir nas bordas e focar no card */
+  background-image:
+    linear-gradient(to right, var(--secondary-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--secondary-color) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.8;
+
   mask-image: radial-gradient(circle at center, black 40%, transparent 90%);
-  
+
   &::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at center, transparent 0%, var(--bg-color) 80%);
+    background: radial-gradient(
+      circle at center,
+      transparent 0%,
+      var(--bg-color) 80%
+    );
     pointer-events: none;
   }
 `;
-
-
 
 const SignUpPage: React.FC = () => {
   return (
@@ -45,8 +46,8 @@ const SignUpPage: React.FC = () => {
           elements: {
             card: {
               backgroundColor: "var(--card-color)",
-              border: "1px solid #1a1a1a",
-              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)",
+              border: "1px solid var(--border-bright)",
+              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.8)",
               borderRadius: "4px",
             },
             headerTitle: {
@@ -71,7 +72,7 @@ const SignUpPage: React.FC = () => {
               transition: "all 0.3s ease",
               "&:hover": {
                 backgroundColor: "var(--secondary-color)",
-                boxShadow: "0 0 15px var(--primary-glow)",
+                boxShadow: "0 0 20px var(--primary-glow)",
               },
               "&:active": {
                 transform: "scale(0.98)",
@@ -85,27 +86,27 @@ const SignUpPage: React.FC = () => {
               marginBottom: "8px",
             },
             formFieldInput: {
-              backgroundColor: "var(--bg-color)",
+              backgroundColor: "var(--bg-darker)",
               color: "var(--text-color)",
-              border: "1px solid #222",
+              border: "1px solid var(--border-bright)",
               borderRadius: "2px",
               padding: "12px",
               "&:focus": {
                 border: "1px solid var(--primary-color)",
-                boxShadow: "none",
+                boxShadow: "0 0 5px var(--primary-glow)",
               },
             },
             socialButtonsBlockButton: {
-              backgroundColor: "#050505",
-              border: "1px solid #222",
+              backgroundColor: "var(--bg-darker)",
+              border: "1px solid var(--border-bright)",
               color: "var(--text-color)",
               borderRadius: "2px",
               "&:hover": {
-                backgroundColor: "#111",
+                backgroundColor: "var(--card-color)",
                 border: "1px solid var(--primary-color)",
               },
             },
-            dividerLine: { background: "#222" },
+            dividerLine: { background: "var(--border-bright)" },
             dividerText: {
               color: "var(--text-muted)",
               fontSize: "10px",
@@ -114,7 +115,11 @@ const SignUpPage: React.FC = () => {
             footerActionLink: {
               color: "var(--primary-color)",
               fontWeight: "bold",
-              "&:hover": { color: "black" },
+              transition: "0.3s",
+              "&:hover": {
+                color: "var(--text-color)",
+                textShadow: "0 0 10px var(--primary-glow)",
+              },
             },
             footerActionText: {
               color: "var(--text-muted)",

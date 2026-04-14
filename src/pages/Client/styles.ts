@@ -1,13 +1,13 @@
 import styled, { createGlobalStyle } from 'styled-components';
 
 export const COLORS = {
-  bg: '#050505',          // Preto profundo
-  surface: '#0d0d0d',     // Cinza quase preto
-  border: '#1a1a1a',      // Borda sutil
-  primary: '#e11d48',     // Vermelho Crimson (Destaque)
+  bg: '#050505',         
+  surface: '#0d0d0d',     
+  border: '#1a1a1a',      
+  primary: '#e11d48',   
   primary_glow: 'rgba(225, 29, 72, 0.15)',
   text_main: '#ffffff',
-  text_dim: '#4b5563',    // Cinza para textos menos importantes
+  text_dim: '#4b5563',    
 };
 
 export const GlobalStyle = createGlobalStyle`
