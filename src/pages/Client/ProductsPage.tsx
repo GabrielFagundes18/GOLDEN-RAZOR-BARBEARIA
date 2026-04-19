@@ -77,7 +77,7 @@ export default function ProductsPage() {
       <LoadingScreen>
         <AlertTriangle color="var(--error-color)" size={40} />
         <p style={{ color: "var(--text-color)" }}>
-          Erro na conexão com a central de armas.
+          Erro na conexão com a central de Produtos.
         </p>
         <button
           onClick={() => window.location.reload()}

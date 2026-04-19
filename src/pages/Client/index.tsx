@@ -74,7 +74,7 @@ const TacticalCard = styled(motion.div)`
   }
 `;
 
-// Estilo para o botão de menu mobile (Hambúrguer)
+
 const MobileHeader = styled.div`
   display: flex;
   align-items: center;

@@ -198,7 +198,7 @@ const EmptyArsenal = styled(motion.div)`
   }
 `;
 
-// --- Interface ---
+
 interface Product {
   id: string | number;
   nome?: string;
@@ -220,7 +220,6 @@ export default function ProductArsenal({
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("TODOS");
 
-  // Correção 1: Safe Map para categorias
   const categories = useMemo(() => {
     const rawCats =
       products
@@ -229,7 +228,6 @@ export default function ProductArsenal({
     return ["TODOS", ...Array.from(new Set(rawCats))];
   }, [products]);
 
-  // Correção 2: Safe Filter
   const filtered = useMemo(() => {
     return products.filter((p) => {
       const nome = p.nome?.toLowerCase() || "";
