@@ -22,6 +22,8 @@ import { Clientes } from "./pages/barber/Clientes";
 import { Vendas } from "./pages/barber/Vendas";
 import { NovoAgendamento } from "./pages/barber/NovoAgendamento";
 import { HistoricoGlobal } from "./pages/barber/HistoricoGlobal"; 
+import {DetalhesCliente} from "./pages/barber/DetalhesCliente";
+import {HistoricoVendas} from "./pages/barber/HistoricoVendas"
 
 // --- COMPONENTE DE PROTEÇÃO ---
 interface ProtectedRouteProps {
@@ -55,7 +57,10 @@ export default function App() {
         <Route path="/barber/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
         <Route path="/barber/vendas" element={<ProtectedRoute><Vendas /></ProtectedRoute>} />
         <Route path="/barber/novo-agendamento" element={<ProtectedRoute><NovoAgendamento /></ProtectedRoute>} />
-        <Route path="/barber/historico" element={<ProtectedRoute><HistoricoGlobal /></ProtectedRoute>} />
+        <Route path="/barber/HistoricoGlobal" element={<ProtectedRoute><HistoricoGlobal /></ProtectedRoute>} />
+        <Route path="/barber/clientes/:id" element={<DetalhesCliente />} />
+        <Route path="/barber/HistoricoVendas" element={<HistoricoVendas />} />
+
 
         {/* --- ÁREA DO CLIENTE (DASHBOARD USUÁRIO) --- */}
         <Route path="/dashboardClient" element={<ProtectedRoute><ClientDashboard /></ProtectedRoute>} />

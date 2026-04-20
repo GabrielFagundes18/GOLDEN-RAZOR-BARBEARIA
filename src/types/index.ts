@@ -11,7 +11,7 @@ export interface Servico {
   is_active: boolean;
 }
 
-// Você também pode já deixar pronto o do Barbeiro, por exemplo:
+
 export interface Barbeiro {
   id: number;
   name: string;

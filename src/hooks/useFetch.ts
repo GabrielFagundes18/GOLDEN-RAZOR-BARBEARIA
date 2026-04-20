@@ -7,7 +7,7 @@ export function useFetch<T>(url: string | null) {
   const [error, setError] = useState<any>(null);
 
   const fetchData = useCallback(async () => {
-    // Se não houver URL, abortamos a missão
+  
     if (!url) return;
 
     setLoading(true);
@@ -24,7 +24,7 @@ export function useFetch<T>(url: string | null) {
   }, [url]);
 
   useEffect(() => {
-    // Só dispara o fetch se a URL existir
+    
     if (url) {
       fetchData();
     }

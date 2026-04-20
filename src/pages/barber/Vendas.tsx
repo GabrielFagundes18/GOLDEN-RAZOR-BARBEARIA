@@ -1,166 +1,305 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
+import { motion, AnimatePresence } from "framer-motion";
+import { ShoppingBag, Loader2, PackageSearch, RefreshCcw } from "lucide-react";
 import { api } from "../../services/api";
-import { ShoppingCart, Package, Loader2, Ban } from "lucide-react";
 
-// Reaproveitando o estilo Premium Dark que definimos
-const ProductCard = styled.div<{ $noStock: boolean }>`
-  background: var(--card-color);
-  border: 1px solid
-    ${(props) => (props.$noStock ? "var(--text-dark)" : "var(--border-color)")};
-  padding: 1.5rem;
-  border-radius: 4px;
-  text-align: center;
-  opacity: ${(props) => (props.$noStock ? 0.6 : 1)};
-  transition: 0.3s;
+// Componentes internos
+import Sidebar from "./Sidebar";
+import { ArsenalItem } from "./ArsenalItem";
+import { VendaModal } from "./VendaModal";
 
-  &:hover {
-    border-color: ${(props) =>
-      props.$noStock ? "var(--text-dark)" : "var(--primary-color)"};
-    box-shadow: ${(props) =>
-      props.$noStock ? "none" : "0 0 15px var(--primary-glow)"};
+// --- Estilos de Luxo ---
+
+const Layout = styled.div`
+  display: flex;
+  background: var(--bg-darker);
+  min-height: 100vh;
+  width: 100%;
+  /* Efeito de scanline sutil para textura cyberpunk */
+  background-image: linear-gradient(var(--scanline-color) 1px, transparent 1px);
+  background-size: 100% 3px;
+`;
+
+const Content = styled.main`
+  flex: 1;
+  padding: 3rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  overflow-y: auto;
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 3rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1.5rem;
+    position: relative;
+
+    /* Detalhe dourado na borda inferior */
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100px;
+      height: 2px;
+      background: var(--primary-color);
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    .title-group {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+
+      .icon-wrapper {
+        background: var(--card-color);
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-bright);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      }
+
+      div {
+        span {
+          color: var(--text-dark);
+          font-size: 0.7rem;
+          font-weight: 800;
+          letter-spacing: 4px;
+          text-transform: uppercase;
+        }
+        h2 {
+          font-family: "Rajdhani", sans-serif;
+          font-size: 2.5rem;
+          color: var(--text-color);
+          text-transform: uppercase;
+          line-height: 1;
+          margin-top: 5px;
+
+          strong {
+            color: var(--gold-color);
+          }
+        }
+      }
+    }
   }
 `;
 
-const PriceTag = styled.div`
-  color: var(--gold-color);
-  font-weight: 800;
-  font-size: 1.5rem;
-  margin: 10px 0;
-  font-family: "Rajdhani", sans-serif;
+const StatsBar = styled.div`
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+
+  .stat-card {
+    background: var(--card-glass);
+    border: 1px solid var(--border-color);
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    small {
+      color: var(--text-muted);
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      display: block;
+    }
+    span {
+      color: var(--gold-bright);
+      font-family: "Rajdhani";
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+  }
+`;
+
+const Grid = styled(motion.div)`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+`;
+
+const LoadingState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  color: var(--primary-color);
+  gap: 1.5rem;
+
+  .loader-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .orbit {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border: 2px solid var(--gold-glow);
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  span {
+    font-family: "Rajdhani";
+    font-size: 1rem;
+    letter-spacing: 3px;
+    font-weight: 700;
+    text-shadow: 0 0 10px var(--primary-glow);
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 5rem;
+  border: 1px dashed var(--border-color);
+  border-radius: 20px;
+  color: var(--text-muted);
+  font-family: "Rajdhani";
+
+  h3 {
+    color: var(--text-color);
+    margin-bottom: 1rem;
+  }
 `;
 
 export const Vendas = () => {
   const [produtos, setProdutos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+
+  const fetchArsenal = async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get("/produtos");
+      setProdutos(data);
+    } catch (err) {
+      console.error("Erro ao carregar o arsenal");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchArsenal = async () => {
-      try {
-        setLoading(true);
-        // Chamando a rota que executa o seu 'getProducts'
-        const { data } = await api.get("/produtos");
-        setProdutos(data);
-      } catch (err) {
-        console.error("Erro ao carregar arsenal");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchArsenal();
   }, []);
 
-  const realizarVenda = async (id: number) => {
-    // Aqui você pode criar uma rota de venda ou apenas dar o alerta
-    alert(`Produto ${id} selecionado para venda.`);
+  const concluirVenda = async (
+    id: number,
+    quantidade: number,
+    cliente: string,
+    total: number,
+  ) => {
+    try {
+      await api.post("/vendas", {
+        produto_id: id,
+        quantidade,
+        cliente_nome: cliente,
+        valor_total: total,
+      });
+
+      setSelectedProduct(null);
+      fetchArsenal();
+    } catch (err: any) {
+      throw err; // Repassa para o modal tratar o erro visualmente
+    }
   };
 
   return (
-    <div
-      style={{
-        padding: "2rem",
-        background: "var(--bg-color)",
-        minHeight: "100vh",
-      }}
-    >
-      <h2
-        style={{
-          color: "var(--gold-color)",
-          marginBottom: "2rem",
-          textTransform: "uppercase",
-        }}
-      >
-        Arsenal de Produtos
-      </h2>
+    <Layout>
+      <Sidebar />
 
-      {loading ? (
-        <Loader2 className="animate-spin" color="var(--primary-color)" />
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-            gap: "1.5rem",
-          }}
-        >
-          {produtos.map((p) => (
-            <ProductCard key={p.id} $noStock={!p.em_estoque}>
-              <div style={{ position: "relative" }}>
-                {p.imagem_url ? (
-                  <img
-                    src={p.imagem_url}
-                    alt={p.nome}
-                    style={{
-                      width: "100%",
-                      height: "150px",
-                      objectFit: "cover",
-                      borderRadius: "4px",
-                    }}
-                  />
-                ) : (
-                  <Package size={48} color="var(--text-dark)" />
-                )}
-                {!p.em_estoque && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      transform: "translate(-50%, -50%)",
-                      background: "var(--error-color)",
-                      color: "white",
-                      padding: "4px 8px",
-                      fontSize: "10px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    ESGOTADO
-                  </div>
-                )}
+      <Content>
+        <header>
+          <div className="title-group">
+            <div className="icon-wrapper">
+              <ShoppingBag size={35} color="var(--primary-color)" />
+            </div>
+            <div>
+              <span>System_Operational_v2.0</span>
+              <h2>
+                Arsenal de <strong>Suprimentos</strong>
+              </h2>
+            </div>
+          </div>
+
+          <StatsBar>
+            <div className="stat-card">
+              <PackageSearch size={18} color="var(--text-dark)" />
+              <div>
+                <small>Itens no Inventário</small>
+                <span>{produtos.length}</span>
               </div>
+            </div>
+            <button
+              onClick={fetchArsenal}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--text-dark)",
+              }}
+            >
+              <RefreshCcw size={20} />
+            </button>
+          </StatsBar>
+        </header>
 
-              <h4 style={{ marginTop: "1rem", color: "var(--text-color)" }}>
-                {p.nome}
-              </h4>
-              <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                {p.marca} | {p.categoria}
-              </p>
+        {loading ? (
+          <LoadingState>
+            <div className="loader-container">
+              <div className="orbit" />
+              <Loader2 size={32} className="animate-spin" />
+            </div>
+            <span>SINCRONIZANDO DATABASE...</span>
+          </LoadingState>
+        ) : produtos.length > 0 ? (
+          <Grid
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {produtos.map((p) => (
+              <ArsenalItem
+                key={p.id}
+                produto={p}
+                onVender={() => setSelectedProduct(p)}
+              />
+            ))}
+          </Grid>
+        ) : (
+          <EmptyState>
+            <h3>Nenhum suprimento detectado</h3>
+            <p>
+              Verifique o cadastro de produtos ou sua conexão com o servidor.
+            </p>
+          </EmptyState>
+        )}
 
-              <PriceTag>R$ {p.preco}</PriceTag>
-
-              <button
-                disabled={!p.em_estoque}
-                onClick={() => realizarVenda(p.id)}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  background: p.em_estoque
-                    ? "var(--primary-color)"
-                    : "var(--text-dark)",
-                  color: "white",
-                  border: "none",
-                  cursor: p.em_estoque ? "pointer" : "not-allowed",
-                  fontWeight: "bold",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                }}
-              >
-                {p.em_estoque ? (
-                  <>
-                    <ShoppingCart size={16} /> VENDER
-                  </>
-                ) : (
-                  <>
-                    <Ban size={16} /> SEM ESTOQUE
-                  </>
-                )}
-              </button>
-            </ProductCard>
-          ))}
-        </div>
-      )}
-    </div>
+        <AnimatePresence>
+          {selectedProduct && (
+            <VendaModal
+              produto={selectedProduct}
+              onClose={() => setSelectedProduct(null)}
+              onConfirm={concluirVenda}
+            />
+          )}
+        </AnimatePresence>
+      </Content>
+    </Layout>
   );
 };
