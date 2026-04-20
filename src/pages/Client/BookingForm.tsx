@@ -124,7 +124,7 @@ export default function BookingForm({
       finalDate.setHours(parseInt(hours), parseInt(minutes), 0);
 
       const payload = {
-        cliente: userName || "Agente Elite",
+        cliente: userName ,
         clerk_id: clerkId,
         servico_id: Number(form.service.id),
         barbeiro_id: Number(form.barber.id),

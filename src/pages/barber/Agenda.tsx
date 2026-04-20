@@ -237,7 +237,7 @@ export const AgendaDoDia: React.FC = () => {
         <ContentWrapper>
           <HeaderSection>
             <div className="title">
-              <span>CONTROLE DE FLUXO</span>
+              
               <h2>Agenda de Hoje</h2>
             </div>
             <div

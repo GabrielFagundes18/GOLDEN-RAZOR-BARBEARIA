@@ -231,7 +231,7 @@ export const Clientes = () => {
         <ContentWrapper>
           <HeaderSection>
             <div className="title">
-              <span>ADMINISTRAÇÃO</span>
+              
               <h2>Base de Clientes</h2>
             </div>
 

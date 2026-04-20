@@ -215,7 +215,7 @@ export const Vendas = () => {
       setSelectedProduct(null);
       fetchArsenal();
     } catch (err: any) {
-      throw err; // Repassa para o modal tratar o erro visualmente
+      throw err; 
     }
   };
 
@@ -230,7 +230,7 @@ export const Vendas = () => {
               <ShoppingBag size={35} color="var(--primary-color)" />
             </div>
             <div>
-              <span>System_Operational_v2.0</span>
+              
               <h2>
                 Arsenal de <strong>Suprimentos</strong>
               </h2>

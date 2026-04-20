@@ -321,7 +321,7 @@ export const VendaModal = ({ produto, onClose, onConfirm }: any) => {
           {!success ? (
             <>
               <TitleSection>
-                <span>OPERACIONAL_MOD_02</span>
+               
                 <h2>Efetuar Venda</h2>
               </TitleSection>
 

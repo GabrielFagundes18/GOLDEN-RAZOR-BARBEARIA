@@ -4,7 +4,6 @@ import styled from "styled-components";
 import {
   ArrowLeft,
   User,
-  Calendar,
   Scissors,
   Mail,
   Phone,
@@ -19,9 +18,9 @@ import Sidebar from "./Sidebar";
 // --- Estilos ---
 const Layout = styled.div`
   display: flex;
-  background: #050505;
+  background: var(--bg-color);
   min-height: 100vh;
-  color: #fff;
+  color: var(--text-color);
   font-family: "Inter", sans-serif;
 `;
 
@@ -41,7 +40,7 @@ const Container = styled.div`
 const BackBtn = styled.button`
   background: none;
   border: none;
-  color: #444;
+  color: var(--text-dark);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -51,13 +50,13 @@ const BackBtn = styled.button`
   font-weight: 800;
   transition: 0.2s;
   &:hover {
-    color: #e11d48;
+    color: var(--primary-color);
   }
 `;
 
 const ProfileHeader = styled.div`
-  background: #0a0a0a;
-  border: 1px solid #111;
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
   padding: 2rem;
   border-radius: 12px;
   display: flex;
@@ -74,19 +73,19 @@ const ProfileHeader = styled.div`
     left: 0;
     width: 4px;
     height: 100%;
-    background: #e11d48;
+    background: var(--primary-color);
   }
 
   .avatar-circle {
     width: 90px;
     height: 90px;
-    background: #000;
-    border: 2px solid #e11d48;
+    background: var(--bg-darker);
+    border: 2px solid var(--primary-color);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 30px rgba(225, 29, 72, 0.15);
+    box-shadow: 0 0 20px var(--primary-glow);
   }
 
   .info {
@@ -95,12 +94,13 @@ const ProfileHeader = styled.div`
       font-size: 2.5rem;
       margin: 0;
       text-transform: uppercase;
+      color: var(--text-color);
     }
     .contact-row {
       display: flex;
       gap: 20px;
       margin-top: 10px;
-      color: #666;
+      color: var(--text-muted);
       font-size: 0.8rem;
       div {
         display: flex;
@@ -119,15 +119,20 @@ const StatsGrid = styled.div`
 `;
 
 const StatCard = styled.div<{ $vip?: boolean }>`
-  background: #0a0a0a;
-  border: 1px solid #111;
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
   padding: 1.5rem;
   border-radius: 8px;
   text-align: center;
+  transition: transform 0.3s ease;
+
+  &:hover {
+    border-color: var(--gold-glow);
+  }
 
   label {
     font-size: 0.6rem;
-    color: #444;
+    color: var(--text-dark);
     text-transform: uppercase;
     letter-spacing: 2px;
   }
@@ -135,28 +140,31 @@ const StatCard = styled.div<{ $vip?: boolean }>`
     display: block;
     font-size: 2rem;
     font-family: "Rajdhani";
-    color: ${(props) => (props.$vip ? "#d4af37" : "#fff")};
+    color: ${(props) =>
+      props.$vip ? "var(--gold-bright)" : "var(--text-color)"};
+    text-shadow: ${(props) =>
+      props.$vip ? "0 0 10px var(--gold-glow)" : "none"};
     font-weight: 800;
     margin-top: 5px;
   }
 `;
 
 const HistorySection = styled.div`
-  background: #0a0a0a;
-  border: 1px solid #111;
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   overflow: hidden;
 
   .table-header {
     padding: 1.2rem;
-    background: #000;
-    border-bottom: 1px solid #111;
+    background: var(--bg-darker);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
     gap: 10px;
     font-size: 0.7rem;
     font-weight: 900;
-    color: #e11d48;
+    color: var(--primary-color);
     text-transform: uppercase;
     letter-spacing: 2px;
   }
@@ -166,28 +174,28 @@ const HistoryRow = styled(motion.div)`
   display: grid;
   grid-template-columns: 120px 1.5fr 1fr 100px;
   padding: 1.2rem;
-  border-bottom: 1px solid #0f0f0f;
+  border-bottom: 1px solid var(--border-color);
   font-size: 0.85rem;
   align-items: center;
 
   .date {
-    color: #555;
+    color: var(--text-dark);
     font-size: 0.75rem;
     font-family: "Syncopate", sans-serif;
   }
   .service {
-    color: #eee;
+    color: var(--text-color);
     font-weight: 600;
   }
   .barber {
-    color: #d4af37;
+    color: var(--primary-color);
     font-size: 0.8rem;
     display: flex;
     align-items: center;
     gap: 5px;
   }
   .price {
-    color: #22c55e;
+    color: var(--success-color);
     text-align: right;
     font-weight: 900;
     font-family: "Rajdhani";
@@ -221,7 +229,11 @@ export const DetalhesCliente = () => {
       <Layout>
         <Sidebar />
         <MainContent>
-          <Loader2 className="animate-spin" color="#e11d48" size={40} />
+          <Loader2
+            className="animate-spin"
+            color="var(--primary-color)"
+            size={40}
+          />
         </MainContent>
       </Layout>
     );
@@ -246,7 +258,7 @@ export const DetalhesCliente = () => {
 
           <ProfileHeader>
             <div className="avatar-circle">
-              <User size={45} color="#e11d48" />
+              <User size={45} color="var(--primary-color)" />
             </div>
             <div className="info">
               <div
@@ -254,9 +266,10 @@ export const DetalhesCliente = () => {
                   display: "flex",
                   alignItems: "center",
                   gap: "8px",
-                  color: "#e11d48",
+                  color: "var(--primary-color)",
                   fontSize: "0.6rem",
                   fontWeight: 900,
+                  letterSpacing: "1px",
                 }}
               >
                 <ShieldCheck size={12} /> VERIFICADO VIA CLERK
@@ -264,10 +277,12 @@ export const DetalhesCliente = () => {
               <h2>{data.perfil.nome}</h2>
               <div className="contact-row">
                 <div>
-                  <Mail size={14} /> {data.perfil.email || "Não informado"}
+                  <Mail size={14} color="var(--primary-color)" />{" "}
+                  {data.perfil.email || "Não informado"}
                 </div>
                 <div>
-                  <Phone size={14} /> {data.perfil.telefone || "Não informado"}
+                  <Phone size={14} color="var(--primary-color)" />{" "}
+                  {data.perfil.telefone || "Não informado"}
                 </div>
               </div>
             </div>
@@ -283,9 +298,9 @@ export const DetalhesCliente = () => {
               <span className="value">{data.historico.length} visitas</span>
             </StatCard>
             <StatCard $vip={data.perfil.pontos >= 10}>
-              <label>Status Fidelidade Ponto</label>
+              <label>Status Fidelidade</label>
               <span className="value">
-                {data.perfil.pontos >= 10 ? "Com serviço gratis" : "Sem benefícios"}
+                {data.perfil.pontos >= 10 ? "VIP Gold" : "Membro"}
               </span>
             </StatCard>
           </StatsGrid>
@@ -297,7 +312,11 @@ export const DetalhesCliente = () => {
 
             {data.historico.length === 0 ? (
               <div
-                style={{ padding: "3rem", textAlign: "center", color: "#444" }}
+                style={{
+                  padding: "3rem",
+                  textAlign: "center",
+                  color: "var(--text-dark)",
+                }}
               >
                 Nenhum serviço concluído até o momento.
               </div>
