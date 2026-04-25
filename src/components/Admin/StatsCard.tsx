@@ -1,59 +1,75 @@
+import React from "react";
 import styled from "styled-components";
-
-// Adicionamos 'isPositive' como opcional aqui
-interface StatsCardProps {
-  label: string;
-  value: string | number;
-  trend: string;
-  isPositive?: boolean;
-}
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 const Card = styled.div`
-  background: #ffffff;
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
   padding: 1.5rem;
   border-radius: 12px;
-  border: 1px solid #f1f1f4;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-5px);
+  }
+
+  .label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .value {
+    display: block;
+    font-size: 1.8rem;
+    font-family: "Rajdhani";
+    font-weight: 800;
+    margin: 10px 0;
+    color: var(--text-color);
+  }
+  .indicator {
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    &.up {
+      color: var(--success-color);
+    }
+    &.down {
+      color: var(--error-color);
+    }
+  }
 `;
 
-const Label = styled.span`
-  color: #71717a;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-`;
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+  trend?: number;
+  trendLabel?: string;
+}
 
-const Value = styled.div`
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #09090b;
-  margin-top: 0.5rem;
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-`;
-
-// O estilo do indicador muda com base na prop isPositive
-const Indicator = styled.span<{ $positive?: boolean }>`
-  font-size: 0.813rem;
-  font-weight: 500;
-  color: ${(props) => (props.$positive ? "#10b981" : "#ef4444")};
-  background: ${(props) => (props.$positive ? "#ecfdf5" : "#fef2f2")};
-  padding: 2px 8px;
-  border-radius: 9999px;
-`;
-
-export const StatsCard = ({
+export const StatCard = ({
   label,
   value,
+  icon,
   trend,
-  isPositive = true,
-}: StatsCardProps) => (
+  trendLabel,
+}: StatCardProps) => (
   <Card>
-    <Label>{label}</Label>
-    <Value>
-      {value}
-      <Indicator $positive={isPositive}>{trend}</Indicator>
-    </Value>
+    <div className="label">
+      {icon} {label}
+    </div>
+    <span className="value">{value}</span>
+    {trend !== undefined && (
+      <div className={`indicator ${trend >= 1 ? "up" : "down"}`}>
+        {trend >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+        {Math.abs(trend)}% {trendLabel}
+      </div>
+    )}
   </Card>
 );

@@ -11,16 +11,13 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
-import Sidebar from "./Sidebar";
 
 // --- STYLED COMPONENTS ---
 
 const Layout = styled.div`
   display: flex;
-  background: var(--bg-color);
   min-height: 100vh;
   color: var(--text-color);
-    background-image: linear-gradient(var(--scanline-color) 1px, transparent 1px);
   background-size: 100% 4px;
 `;
 
@@ -161,7 +158,6 @@ export const HistoricoVendas = () => {
 
   return (
     <Layout>
-      <Sidebar />
       <Main>
         
 

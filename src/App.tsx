@@ -4,7 +4,7 @@ import { GlobalStyles } from "./styles/GlobalStyles";
 import { useUser } from "@clerk/clerk-react";
 
 // --- IMPORTS DE PÁGINAS EXISTENTES ---
-import Home from "./pages/Home";
+import GoldenRazor from "./pages/Home";
 import SignUpPage from "./pages/SignUp";
 import LoginPage from "./pages/Login";
 import ClientDashboard from "./pages/Client";
@@ -13,93 +13,111 @@ import ProductDetails from "./pages/Client/ProductDetails";
 import HistoryPage from "./pages/Client/HistoryList";
 import BookingForm from "./pages/Client/BookingForm";
 import ProfileView from "./pages/Client/ProfileView";
-import { AdminDashboard } from "./pages/Admin/AdminDashboard";
+import { DashboardDono } from "./pages/Admin";
 
 // --- NOVOS IMPORTS DO DASHBOARD DO BARBEIRO ---
 import DashboardBarbeiro from "./pages/barber/Dashboard";
-import { AgendaDoDia } from "./pages/barber/Agenda";
+import { AgendaDoDia} from "./pages/barber/Agenda";
 import { Clientes } from "./pages/barber/Clientes";
 import { Vendas } from "./pages/barber/Vendas";
 import { NovoAgendamento } from "./pages/barber/NovoAgendamento";
-import { HistoricoGlobal } from "./pages/barber/HistoricoGlobal"; 
-import {DetalhesCliente} from "./pages/barber/DetalhesCliente";
-import {HistoricoVendas} from "./pages/barber/HistoricoVendas"
-
-// --- COMPONENTE DE PROTEÇÃO ---
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isSignedIn, isLoaded } = useUser();
-  if (!isLoaded) return null;
-  if (!isSignedIn) return <Navigate to="/login" replace />;
-  return <>{children}</>;
-};
+import { HistoricoGlobal } from "./pages/barber/HistoricoGlobal";
+import { DetalhesCliente } from "./pages/barber/DetalhesCliente";
+import { HistoricoVendas } from "./pages/barber/HistoricoVendas";
+import { AgendaDono } from "./pages/Admin/Agenda";
+import { Equipe } from "./pages/Admin/Equipe";
+import { Financeiro } from "./pages/Admin/Financeiro";
+import { ClientesDono } from "./pages/Admin/Clientes";
+import { ProdutosDono } from "./pages/Admin/Produtos";
+import { HistoricoAdmin } from "./pages/Admin/HistoricoAdmin";
+import Overview from "./pages/Client/Overview";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { AdminLayout } from "./pages/Admin/AdminLayout";
+import  BarberLayout  from "./pages/barber/BarberLayout";
 
 export default function App() {
   const { user, isLoaded } = useUser();
-
   if (!isLoaded) return null;
 
   return (
     <BrowserRouter>
       <GlobalStyles />
+
       <Routes>
-        {/* PÚBLICO */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login/*" element={<LoginPage />} />
+        {/* PUBLIC */}
+        <Route path="/" element={<GoldenRazor />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/cadastro/*" element={<SignUpPage />} />
 
-        {/* --- ÁREA DO BARBEIRO (DASHBOARD ADMINISTRATIVO) --- */}
-        <Route path="/barber" element={<ProtectedRoute><DashboardBarbeiro /></ProtectedRoute>} />
-        <Route path="/barber/agenda" element={<ProtectedRoute><AgendaDoDia /></ProtectedRoute>} />
-        <Route path="/barber/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
-        <Route path="/barber/vendas" element={<ProtectedRoute><Vendas /></ProtectedRoute>} />
-        <Route path="/barber/novo-agendamento" element={<ProtectedRoute><NovoAgendamento /></ProtectedRoute>} />
-        <Route path="/barber/HistoricoGlobal" element={<ProtectedRoute><HistoricoGlobal /></ProtectedRoute>} />
-        <Route path="/barber/clientes/:id" element={<DetalhesCliente />} />
-        <Route path="/barber/HistoricoVendas" element={<HistoricoVendas />} />
-
-
-        {/* --- ÁREA DO CLIENTE (DASHBOARD USUÁRIO) --- */}
-        <Route path="/dashboardClient" element={<ProtectedRoute><ClientDashboard /></ProtectedRoute>} />
-        <Route path="/produtos" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
-        <Route path="/produtos/:id" element={<ProtectedRoute><ProductDetails /></ProtectedRoute>} />
-        <Route path="/perfil" element={<ProtectedRoute><ProfileView /></ProtectedRoute>} />
-        
+        {/* CLIENT */}
         <Route
-          path="/agenda"
+          path="/client"
           element={
-            <ProtectedRoute>
-              <ClientDashboard>
-                <div style={{ maxWidth: "700px", margin: "0 auto" }}>
-                  <BookingForm
-                    clerkId={user?.id || ""}
-                    userName={user?.firstName || "Cliente"}
-                  />
-                </div>
-              </ClientDashboard>
+            <ProtectedRoute role="client">
+              <ClientDashboard />
             </ProtectedRoute>
           }
-        />
+        >
+          {/* 👇 ESSA LINHA FALTAVA */}
+          <Route index element={<Overview />} />
 
+          <Route
+            path="agenda"
+            element={
+              <BookingForm
+                clerkId={user?.id || ""}
+                userName={user?.firstName || ""}
+              />
+            }
+          />
+
+          <Route path="produtos" element={<ProductsPage />} />
+          <Route path="produtos/:id" element={<ProductDetails />} />
+          <Route path="perfil" element={<ProfileView />} />
+          <Route path="historico" element={<HistoryPage />} />
+        </Route>
+
+        {/* BARBER */}
         <Route
-          path="/history"
+          path="/barber"
           element={
-            <ProtectedRoute>
-              <ClientDashboard>
-                <HistoryPage />
-              </ClientDashboard>
+            <ProtectedRoute role="barber">
+              <BarberLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<DashboardBarbeiro />} />
+          <Route path="agenda" element={<AgendaDoDia />} />
+          <Route path="novo" element={<NovoAgendamento />} />
+          <Route path="vendas" element={<Vendas />} />
+          <Route path="clientes" element={<Clientes />} />
+          <Route path="historico" element={<HistoricoVendas />} />
+          <Route path="HistoricoVendas" element={<HistoricoGlobal />} />
+          <Route path="clientes/:id" element={< DetalhesCliente/>} />
 
-        {/* ADMIN GERAL */}
-        <Route path="/admin" element={<AdminDashboard />} />
+        </Route>
+        {/* ADMIN */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute role="admin">
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<DashboardDono />} />
 
-        {/* REDIRECIONAMENTO PADRÃO */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="agenda" element={<AgendaDono />} />
+          <Route path="clientes" element={<ClientesDono />} />
+          <Route path="equipe" element={<Equipe />} />
+          <Route path="financeiro" element={<Financeiro />} />
+          <Route path="produtos" element={<ProdutosDono />} />
+          <Route path="historico" element={<HistoricoAdmin />} />
+        </Route>
+
+        {/* DEFAULT */}
+
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );

@@ -27,7 +27,6 @@ import { ptBR } from "date-fns/locale";
 
 import { api } from "../../services/api";
 import { useFetch } from "../../hooks/useFetch";
-import Sidebar from "./Sidebar";
 
 interface IService {
   id: number;
@@ -48,7 +47,6 @@ interface ICliente {
 
 const Layout = styled.div`
   display: flex;
-  background: var(--bg-darker);
   min-height: 100vh;
   color: var(--text-color);
   font-family: "Inter", sans-serif;
@@ -358,7 +356,6 @@ export const NovoAgendamento: React.FC = () => {
 
   return (
     <Layout>
-      <Sidebar />
       <MainContent>
         <HeaderContainer>
           <BackButton

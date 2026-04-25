@@ -1,6 +1,7 @@
-import React from "react";
-import { SignIn } from "@clerk/clerk-react";
+import React, { useEffect, useRef } from "react";
+import { SignIn, useUser } from "@clerk/clerk-react";
 import styled from "styled-components";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const LoginContainer = styled.div`
   height: 100vh;
@@ -36,13 +37,46 @@ const LoginContainer = styled.div`
 `;
 
 const LoginPage: React.FC = () => {
+  const { isSignedIn, user, isLoaded } = useUser();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // 🔥 evita loop infinito de redirect
+  const hasRedirected = useRef(false);
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || hasRedirected.current) return;
+
+    hasRedirected.current = true;
+
+    const from = location.state?.from?.pathname;
+    const role = user?.publicMetadata?.role as string;
+
+    console.log("ROLE:", role);
+
+    // 🔥 evita voltar pra home automaticamente
+    if (from && from !== "/login" && from !== "/") {
+      navigate(from, { replace: true });
+      return;
+    }
+
+    // 🔥 redirect por role
+    if (role === "admin") {
+      navigate("/admin", { replace: true });
+    } else if (role === "barber") {
+      navigate("/barber", { replace: true });
+    } else {
+      navigate("/client", { replace: true });
+    }
+  }, [isSignedIn, isLoaded, user, navigate, location]);
   return (
     <LoginContainer>
       <SignIn
         signUpUrl="/cadastro"
         routing="path"
         path="/login"
-        afterSignInUrl="/dashboard"
+        afterSignInUrl="/client"
+        redirectUrl="/client"
         appearance={{
           layout: {
             socialButtonsVariant: "blockButton",

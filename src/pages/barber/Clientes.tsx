@@ -12,11 +12,10 @@ import {
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../../services/api";
-import Sidebar from "./Sidebar";
+
 
 const Layout = styled.div`
   display: flex;
-  background: var(--bg-color); // Ajustado
   min-height: 100vh;
   color: var(--text-color); // Ajustado
   font-family: "Inter", sans-serif;
@@ -28,13 +27,11 @@ const MainContent = styled.main`
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-image: linear-gradient(var(--scanline-color) 1px, transparent 1px);
-  background-size: 100% 4px;
 `;
 
 const ContentWrapper = styled.div`
   width: 100%;
-  max-width: 1000px;
+  max-width: 1400px;
 `;
 
 const HeaderSection = styled.div`
@@ -67,10 +64,10 @@ const HeaderSection = styled.div`
 `;
 
 const SearchBar = styled.div`
-  background: var(--card-color); 
-  border: 1px solid var(--border-color); 
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
   padding: 0.8rem 1.2rem;
-  border-radius: 4px; 
+  border-radius: 4px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -86,19 +83,19 @@ const SearchBar = styled.div`
     outline: none;
     font-size: 0.9rem;
     &::placeholder {
-      color: var(--text-dark); 
+      color: var(--text-dark);
     }
   }
 
   &:focus-within {
-    border-color: var(--primary-color); 
-    box-shadow: 0 0 15px var(--primary-glow); 
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px var(--primary-glow);
   }
 `;
 
 const TableContainer = styled.div`
-  background: var(--card-color); 
-  border: 1px solid var(--border-color); 
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
@@ -109,8 +106,8 @@ const TableHeader = styled.div`
   grid-template-columns: 1.5fr 1fr 1fr 1fr 80px;
   padding: 1rem 1.5rem;
   background: #000;
-  border-bottom: 1px solid var(--border-color); 
-  color: var(--text-muted); 
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-muted);
   font-size: 0.65rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -126,7 +123,7 @@ const Row = styled(motion.div)`
   display: grid;
   grid-template-columns: 1.5fr 1fr 1fr 1fr 80px;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--border-color); 
+  border-bottom: 1px solid var(--border-color);
   align-items: center;
   transition: 0.2s;
 
@@ -146,12 +143,12 @@ const Row = styled(motion.div)`
   .points-cell {
     font-family: "Syncopate", sans-serif;
     font-size: 0.75rem;
-    color: var(--gold-color); 
+    color: var(--gold-color);
   }
 
   .stats-cell {
     font-size: 0.8rem;
-    color: var(--text-muted); 
+    color: var(--text-muted);
   }
 
   @media (max-width: 768px) {
@@ -226,12 +223,10 @@ export const Clientes = () => {
 
   return (
     <Layout>
-      <Sidebar />
       <MainContent>
         <ContentWrapper>
           <HeaderSection>
             <div className="title">
-              
               <h2>Base de Clientes</h2>
             </div>
 
@@ -277,7 +272,7 @@ export const Clientes = () => {
               ) : filteredCustomers.length > 0 ? (
                 filteredCustomers.map((c, index) => (
                   <Row
-                    key={c.clerk_id}
+                    key={c.clerk_id || `customer-${index}`}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 10 }}
@@ -320,9 +315,10 @@ export const Clientes = () => {
 
                     <div>
                       <ActionBtn
-                        onClick={() =>
-                          navigate(`/barber/clientes/${c.clerk_id}`)
-                        }
+                        onClick={() =>{
+                  
+                         navigate(`/barber/clientes/${c.id}`);
+                        }}
                       >
                         <ChevronRight size={18} />
                       </ActionBtn>

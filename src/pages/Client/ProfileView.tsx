@@ -2,428 +2,374 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { useUser, useClerk, UserProfile } from "@clerk/clerk-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, User, Shield, LogOut } from "lucide-react";
+import {
+
+  Calendar,
+
+  Shield,
+  LogOut,
+  User as UserIcon,
+  Scissors,
+  ChevronRight,
+  MapPin,
+  Star,
+  Zap,
+} from "lucide-react";
 import { api } from "../../services/api";
 
-import { Sidebar } from "./Sidebar";
-
-const PageWrapper = styled.div`
+const PageContainer = styled.div`
   display: flex;
   min-height: 100vh;
-  background: var(--bg-color);
-  overflow-x: hidden;
+  color: #fff;
+  font-family: "Inter", sans-serif;
 `;
 
-const MainContent = styled.main`
+const ContentArea = styled.main`
   flex: 1;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-  overflow-y: auto;
-  /* Ajuste para Sidebar Desktop se necessário */
-  margin-left: 260px;
-
-  @media (max-width: 1024px) {
-    margin-left: 0;
-    padding: 100px 20px 40px 20px;
-  }
-`;
-
-const ProfileGrid = styled.div`
-  width: 100%;
-  max-width: 1200px;
+  padding: 40px;
+  max-width: 1400px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 30px;
 
-  @media (min-width: 1024px) {
-    grid-template-columns: 320px 1fr;
+  @media (max-width: 768px) {
+    padding: 80px 20px 20px;
   }
 `;
 
-const MemberCard = styled(motion.div)`
-  background: var(--card-color);
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
-  padding: 30px;
-  height: fit-content;
-  text-align: center;
-`;
-
-const AvatarWrapper = styled.div`
-  width: 100px;
-  height: 100px;
-  margin: 0 auto 20px;
-  img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 2px solid var(--gold-color);
-    object-fit: cover;
-    box-shadow: 0 0 15px var(--gold-glow);
-  }
-`;
-
-const PointsBadge = styled.div`
-  background: linear-gradient(
-    135deg,
-    var(--gold-color) 0%,
-    var(--gold-bright) 100%
-  );
-  color: #000;
-  padding: 15px;
-  border-radius: 12px;
-  margin: 20px 0;
-  box-shadow: 0 10px 20px -5px var(--gold-glow);
-
-  h2 {
-    font-size: 26px;
-    margin: 0;
+const WelcomeHeader = styled.div`
+  margin-bottom: 40px;
+  h1 {
+    font-size: 2.5rem;
     font-weight: 900;
+    letter-spacing: -1px;
+    margin: 0;
   }
   span {
-    font-size: 10px;
+    color: #d4af37;
+    font-weight: 600;
     text-transform: uppercase;
-    font-weight: 800;
-    letter-spacing: 1px;
+    font-size: 0.8rem;
+    letter-spacing: 3px;
   }
 `;
 
-const NavItem = styled.button<{ active?: boolean }>`
+const Grid = styled.div`
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 30px;
+  @media (max-width: 1100px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const Card = styled(motion.div)`
+  background: #111;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  padding: 30px;
+  position: relative;
+  overflow: hidden;
+`;
+
+const PointsCard = styled(Card)`
+  background: linear-gradient(135deg, #d4af37 0%, #aa8a2e 100%);
+  color: #000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+
+  .label {
+    font-weight: 800;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+  .value {
+    font-size: 4rem;
+    font-weight: 900;
+    line-height: 1;
+    margin: 10px 0;
+  }
+`;
+
+const TabButton = styled.button<{ active: boolean }>`
+  all: unset;
   width: 100%;
-  background: ${(props) =>
-    props.active ? "var(--primary-glow)" : "transparent"};
-  border: none;
-  color: ${(props) =>
-    props.active ? "var(--primary-color)" : "var(--text-muted)"};
-  padding: 14px;
-  border-radius: 10px;
+  padding: 15px 20px;
+  border-radius: 12px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 12px;
   cursor: pointer;
-  transition: 0.3s;
-  margin-bottom: 8px;
-  font-weight: 600;
+  transition: 0.2s;
+  background: ${(props) =>
+    props.active ? "rgba(214, 175, 55, 0.1)" : "transparent"};
+  color: ${(props) => (props.active ? "#d4af37" : "#888")};
+  border: 1px solid
+    ${(props) => (props.active ? "rgba(214, 175, 55, 0.2)" : "transparent")};
 
   &:hover {
-    background: var(--scanline-color);
-    color: var(--text-color);
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
   }
 `;
 
-const GlassCard = styled.div`
-  background: var(--card-glass);
-  border: 1px solid var(--border-color);
-  border-radius: 15px;
-  padding: 25px;
-  backdrop-filter: blur(10px);
+const AppointmentRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  margin-bottom: 12px;
+  border: 1px solid transparent;
+  transition: 0.3s;
+
+  &:hover {
+    border-color: #d4af37;
+    background: rgba(214, 175, 55, 0.02);
+  }
+
+  .info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  .icon-box {
+    background: #1a1a1a;
+    padding: 10px;
+    border-radius: 12px;
+    color: #d4af37;
+  }
 `;
 
-const StatusTag = styled.span`
-  background: var(--primary-glow);
-  color: var(--primary-color);
-  font-size: 10px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-weight: bold;
+const Badge = styled.span<{ status: string }>`
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 800;
   text-transform: uppercase;
+  background: ${(props) =>
+    props.status === "concluido" ? "#10b98120" : "#d4af3720"};
+  color: ${(props) => (props.status === "concluido" ? "#10b981" : "#d4af37")};
 `;
 
+// --- COMPONENTE PRINCIPAL ---
 export default function ProfileView() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
-  const [activeTab, setActiveTab] = useState<"perfil" | "seguranca">("perfil");
-  const [data, setData] = useState({ pontos: 0, recentAppointments: [] });
+  const [activeTab, setActiveTab] = useState("overview");
+  const [dbData, setDbData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProfileData = async () => {
-      if (!user?.id) return;
+    async function syncAndFetch() {
+      if (!isLoaded || !user) return;
       try {
-        const response = await api.get(`/profile/${user.id}`);
-        setData(response.data);
-      } catch (err) {
-        console.error("Erro ao buscar dados do perfil:", err);
+        // 1. Sync
+        await api.post("/perfis/sync", {
+          clerk_id: user.id,
+          nome: user.fullName,
+          email: user.primaryEmailAddress?.emailAddress,
+        });
+        // 2. Fetch
+        const res = await api.get(`/profile/${user.id}`);
+        setDbData(res.data);
+      } catch (e) {
+        console.error(e);
       } finally {
         setLoading(false);
       }
-    };
-    fetchProfileData();
-  }, [user]);
+    }
+    syncAndFetch();
+  }, [isLoaded, user]);
 
-  if (!user) return null;
+  if (!isLoaded || loading)
+    return <div style={{ background: "#0a0a0a", height: "100vh" }} />;
 
   return (
-    <PageWrapper>
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        userName={user.firstName || "Operador"}
-      />
+    <PageContainer>
+      <ContentArea>
+        <WelcomeHeader>
+          <span>MEMBRO EXCLUSIVO // ARSENAL</span>
+          <h1>Fala, {user?.firstName} </h1>
+        </WelcomeHeader>
 
-      <MainContent>
-        <ProfileGrid>
-          <MemberCard
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+        <Grid>
+          {/* COLUNA ESQUERDA: PERFIL E PONTOS */}
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "20px" }}
           >
-            <AvatarWrapper>
-              <img src={user.imageUrl} alt="Foto de Perfil" />
-            </AvatarWrapper>
-            <h3
-              style={{
-                margin: 0,
-                fontSize: "1.2rem",
-                color: "var(--text-color)",
-              }}
+            <PointsCard
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
             >
-              {user.firstName}
-            </h3>
-            <p
-              style={{
-                color: "var(--text-muted)",
-                fontSize: "13px",
-                marginBottom: "25px",
-              }}
-            >
-              {user.primaryEmailAddress?.emailAddress}
-            </p>
+              <Zap size={24} style={{ marginBottom: 10 }} />
+              <div className="label">Saldo de Fidelidade</div>
+              <div className="value">{dbData?.pontos || 0}</div>
+              <div className="label">Troque por cortes grátis</div>
+            </PointsCard>
 
-            <PointsBadge>
-              <span>Saldo Golden</span>
-              <h2>{data.pontos}</h2>
-            </PointsBadge>
+            <Card>
+              <div style={{ textAlign: "center", marginBottom: "25px" }}>
+                <img
+                  src={user?.imageUrl}
+                  alt="Avatar"
+                  style={{
+                    width: 80,
+                    borderRadius: "50%",
+                    border: "2px solid #d4af37",
+                  }}
+                />
+                <h3 style={{ margin: "15px 0 5px" }}>{user?.fullName}</h3>
+                <p style={{ color: "#666", fontSize: "0.8rem" }}>
+                  {user?.primaryEmailAddress?.emailAddress}
+                </p>
+              </div>
 
-            <nav>
-              <NavItem
-                active={activeTab === "perfil"}
-                onClick={() => setActiveTab("perfil")}
+              <TabButton
+                active={activeTab === "overview"}
+                onClick={() => setActiveTab("overview")}
               >
-                <User size={18} /> Resumo e Estilo
-              </NavItem>
-              <NavItem
-                active={activeTab === "seguranca"}
-                onClick={() => setActiveTab("seguranca")}
+                <UserIcon size={18} /> Resumo da Conta
+              </TabButton>
+              <TabButton
+                active={activeTab === "settings"}
+                onClick={() => setActiveTab("settings")}
               >
-                <Shield size={18} /> Conta e Segurança
-              </NavItem>
-              <NavItem
+                <Shield size={18} /> Configurações
+              </TabButton>
+              <TabButton
+                active={false}
                 onClick={() => signOut()}
-                style={{ color: "var(--error-color)", marginTop: "30px" }}
+                style={{ color: "#ef4444" }}
               >
                 <LogOut size={18} /> Sair da Conta
-              </NavItem>
-            </nav>
-          </MemberCard>
+              </TabButton>
+            </Card>
+          </div>
 
-          <section style={{ width: "100%" }}>
+          {/* COLUNA DIREITA: CONTEÚDO DINÂMICO */}
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+          >
             <AnimatePresence mode="wait">
-              {activeTab === "perfil" ? (
+              {activeTab === "overview" ? (
                 <motion.div
-                  key="perfil"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
+                  key="overview"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
                 >
-                  <h3
-                    style={{
-                      letterSpacing: "2px",
-                      color: "var(--primary-color)",
-                      marginBottom: "20px",
-                      fontSize: "0.9rem",
-                      fontWeight: 900,
-                    }}
-                  >
-                    MEU HISTÓRICO //
-                  </h3>
-                  <GlassCard>
-                    {loading ? (
-                      <p style={{ color: "var(--text-muted)" }}>
-                        Acessando banco de dados...
-                      </p>
-                    ) : data.recentAppointments.length > 0 ? (
-                      data.recentAppointments.map((app: any) => (
-                        <div
-                          key={app.id}
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            padding: "18px 0",
-                            borderBottom: "1px solid var(--border-color)",
-                            alignItems: "center",
-                          }}
-                        >
-                          <div>
-                            <h4
-                              style={{
-                                margin: "0 0 5px 0",
-                                color: "var(--text-color)",
-                              }}
-                            >
-                              {app.servico}
-                            </h4>
-                            <p
-                              style={{
-                                fontSize: "13px",
-                                color: "var(--text-muted)",
-                                margin: 0,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                              }}
-                            >
-                              <Calendar size={14} />{" "}
-                              {new Date(app.data).toLocaleDateString("pt-BR")}
-                            </p>
-                          </div>
-                          <StatusTag>{app.status}</StatusTag>
-                        </div>
-                      ))
-                    ) : (
-                      <p
-                        style={{
-                          color: "var(--text-muted)",
-                          textAlign: "center",
-                          padding: "10px",
-                        }}
-                      >
-                        Nenhum registro encontrado no arsenal.
-                      </p>
-                    )}
-                  </GlassCard>
-
-                  <h3
-                    style={{
-                      letterSpacing: "2px",
-                      color: "var(--primary-color)",
-                      margin: "40px 0 20px 0",
-                      fontSize: "0.9rem",
-                      fontWeight: 900,
-                    }}
-                  >
-                    DADOS CADASTRAIS //
-                  </h3>
-                  <GlassCard>
+                  <Card>
                     <div
                       style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "repeat(auto-fit, minmax(180px, 1fr))",
-                        gap: "25px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "25px",
                       }}
                     >
-                      <div>
-                        <small
-                          style={{
-                            color: "var(--primary-color)",
-                            display: "block",
-                            marginBottom: "6px",
-                            fontWeight: 900,
-                            fontSize: "10px",
-                          }}
-                        >
-                          NOME COMPLETO
-                        </small>
-                        <span
-                          style={{
-                            fontSize: "1.1rem",
-                            color: "var(--text-color)",
-                          }}
-                        >
-                          {user.fullName}
-                        </span>
-                      </div>
-                      <div>
-                        <small
-                          style={{
-                            color: "var(--primary-color)",
-                            display: "block",
-                            marginBottom: "6px",
-                            fontWeight: 900,
-                            fontSize: "10px",
-                          }}
-                        >
-                          MEMBRO DESDE
-                        </small>
-                        <span
-                          style={{
-                            fontSize: "1.1rem",
-                            color: "var(--text-color)",
-                          }}
-                        >
-                          {new Date(user.createdAt!).getFullYear()}
-                        </span>
-                      </div>
+                      <h4 style={{ margin: 0, letterSpacing: "1px" }}>
+                        ÚLTIMOS AGENDAMENTOS
+                      </h4>
+                      <Scissors size={18} color="#d4af37" />
                     </div>
-                  </GlassCard>
+
+                    {dbData?.recentAppointments?.length > 0 ? (
+                      dbData.recentAppointments.map((app: any) => (
+                        <AppointmentRow key={app.id}>
+                          <div className="info">
+                            <div className="icon-box">
+                              <Calendar size={20} />
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 700 }}>
+                                {app.servico}
+                              </div>
+                              <div
+                                style={{ fontSize: "0.75rem", color: "#666" }}
+                              >
+                                {new Date(app.data).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "15px",
+                            }}
+                          >
+                            <Badge status={app.status}>{app.status}</Badge>
+                            <ChevronRight size={16} color="#333" />
+                          </div>
+                        </AppointmentRow>
+                      ))
+                    ) : (
+                      <div
+                        style={{
+                          textAlign: "center",
+                          padding: "40px",
+                          color: "#444",
+                        }}
+                      >
+                        <p>Você ainda não realizou nenhum corte.</p>
+                        <button
+                          style={{
+                            background: "#d4af37",
+                            border: "none",
+                            padding: "10px 20px",
+                            borderRadius: "8px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Agendar Agora
+                        </button>
+                      </div>
+                    )}
+                  </Card>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "20px",
+                      marginTop: "20px",
+                    }}
+                  >
+                    <Card>
+                      <Star size={20} color="#d4af37" />{" "}
+                      <h5 style={{ margin: "10px 0" }}>Membro desde</h5>{" "}
+                      <p style={{ color: "#888" }}>
+                        {new Date(user?.createdAt || "").getFullYear()}
+                      </p>
+                    </Card>
+                    <Card>
+                      <MapPin size={20} color="#d4af37" />{" "}
+                      <h5 style={{ margin: "10px 0" }}>Unidade Favorita</h5>{" "}
+                      <p style={{ color: "#888" }}>Arsenal Matriz</p>
+                    </Card>
+                  </div>
                 </motion.div>
               ) : (
                 <motion.div
-                  key="seguranca"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
+                  key="settings"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                 >
-                  <h3
-                    style={{
-                      letterSpacing: "2px",
-                      color: "var(--primary-color)",
-                      marginBottom: "20px",
-                      fontSize: "0.9rem",
-                      fontWeight: 900,
-                    }}
-                  >
-                    CONFIGURAÇÕES DE CONTA //
-                  </h3>
-                  <GlassCard style={{ padding: "10px", overflow: "hidden" }}>
-                    <UserProfile
-                      routing="hash"
-                      appearance={{
-                        elements: {
-                          rootBox: { width: "100%" },
-                          card: {
-                            background: "transparent",
-                            boxShadow: "none",
-                            border: "none",
-                            width: "100%",
-                          },
-                          navbar: { display: "none" },
-                          headerTitle: { color: "var(--primary-color)" },
-                          headerSubtitle: { color: "var(--text-muted)" },
-                          userPreviewMainIdentifier: {
-                            color: "var(--text-color)",
-                          },
-                          userPreviewSecondaryIdentifier: {
-                            color: "var(--text-muted)",
-                          },
-                          profileSectionTitleText: {
-                            color: "var(--primary-color)",
-                          },
-                          formButtonPrimary: {
-                            backgroundColor: "var(--primary-color)",
-                            color: "#fff",
-                            fontWeight: "bold",
-                            textTransform: "uppercase",
-                          },
-                          formFieldLabel: { color: "var(--text-muted)" },
-                          formFieldInput: {
-                            background: "var(--bg-darker)",
-                            border: "1px solid var(--border-color)",
-                            color: "var(--text-color)",
-                          },
-                        },
-                      }}
-                    />
-                  </GlassCard>
+                  <Card style={{ padding: 0, overflow: "hidden" }}>
+                    <UserProfile routing="hash" />
+                  </Card>
                 </motion.div>
               )}
             </AnimatePresence>
-          </section>
-        </ProfileGrid>
-      </MainContent>
-    </PageWrapper>
+          </div>
+        </Grid>
+      </ContentArea>
+    </PageContainer>
   );
 }

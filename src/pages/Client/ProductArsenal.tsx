@@ -3,202 +3,9 @@ import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { HiSearch } from "react-icons/hi";
-import { FaShoppingCart, FaArrowRight, FaBoxOpen } from "react-icons/fa";
+import { FaArrowRight, FaBoxOpen } from "react-icons/fa";
 
-// --- Estilos de Layout ---
-
-const FilterSection = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin-bottom: 40px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  padding: 20px 0;
-  background: var(--bg-color, #0a0a0a);
-`;
-
-const SearchBar = styled.div`
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-color, #333);
-  border-radius: 12px;
-  padding: 12px 20px;
-  gap: 15px;
-  transition: all 0.3s ease;
-
-  &:focus-within {
-    border-color: var(--primary-color, #00ff88);
-    background: rgba(255, 255, 255, 0.05);
-    box-shadow: 0 0 15px var(--primary-glow, rgba(0, 255, 136, 0.3));
-  }
-
-  input {
-    background: none;
-    border: none;
-    color: var(--text-color, #fff);
-    width: 100%;
-    outline: none;
-    font-size: 0.9rem;
-    &::placeholder {
-      color: var(--text-dark, #666);
-    }
-  }
-
-  svg {
-    color: var(--primary-color, #00ff88);
-  }
-`;
-
-const CategoryTabs = styled.div`
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 10px;
-  scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
-`;
-
-const Tab = styled.button<{ $active: boolean }>`
-  background: ${(props) =>
-    props.$active
-      ? "var(--primary-color, #00ff88)"
-      : "var(--card-glass, rgba(255,255,255,0.05))"};
-  color: ${(props) => (props.$active ? "#000" : "var(--text-muted, #aaa)")};
-  border: 1px solid
-    ${(props) =>
-      props.$active
-        ? "var(--primary-color, #00ff88)"
-        : "var(--border-color, #333)"};
-  padding: 8px 20px;
-  border-radius: 8px;
-  font-size: 10px;
-  font-weight: 900;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: 0.3s;
-  text-transform: uppercase;
-  font-family: "Syncopate", sans-serif;
-
-  &:hover {
-    border-color: var(--primary-color, #00ff88);
-    box-shadow: 0 0 10px var(--primary-glow, rgba(0, 255, 136, 0.3));
-  }
-`;
-
-const ProductCard = styled(motion.div)<{ $outOfStock: boolean }>`
-  background: var(--card-color, #1a1a1a);
-  border: 1px solid var(--border-color, #333);
-  border-radius: 20px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
-  height: 100%;
-
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(
-      135deg,
-      transparent 50%,
-      rgba(255, 255, 255, 0.03) 50%
-    );
-  }
-
-  &:hover {
-    border-color: ${(props) =>
-      props.$outOfStock
-        ? "var(--border-color, #333)"
-        : "var(--primary-color, #00ff88)"};
-    .arrow-icon {
-      transform: translateX(5px);
-      opacity: 1;
-    }
-  }
-
-  .image-wrapper {
-    height: 180px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 20px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 12px;
-    position: relative;
-
-    img {
-      max-height: 80%;
-      object-fit: contain;
-      filter: ${(props) =>
-        props.$outOfStock ? "grayscale(1) opacity(0.5)" : "none"};
-      transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-  }
-`;
-
-const MainBtn = styled.button`
-  background: var(--primary-color, #00ff88);
-  color: #000;
-  border: none;
-  padding: 14px;
-  border-radius: 10px;
-  font-weight: 900;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  transition: 0.3s;
-  font-family: "Syncopate", sans-serif;
-  font-size: 0.65rem;
-
-  .arrow-icon {
-    opacity: 0.5;
-    transition: 0.3s;
-  }
-
-  &:hover:not(:disabled) {
-    background: #fff;
-    box-shadow: 0 0 20px var(--primary-glow, rgba(0, 255, 136, 0.3));
-  }
-
-  &:disabled {
-    background: var(--bg-darker, #111);
-    color: var(--text-dark, #666);
-    cursor: not-allowed;
-  }
-`;
-
-const EmptyArsenal = styled(motion.div)`
-  grid-column: 1 / -1;
-  padding: 100px 20px;
-  text-align: center;
-  border: 1px dashed var(--border-color, #333);
-  border-radius: 20px;
-  color: var(--text-dark, #666);
-
-  svg {
-    margin-bottom: 15px;
-    opacity: 0.3;
-  }
-  p {
-    font-family: "Syncopate", sans-serif;
-    font-size: 0.7rem;
-    letter-spacing: 2px;
-  }
-`;
-
-
+// --- INTERFACE ---
 interface Product {
   id: string | number;
   nome?: string;
@@ -206,7 +13,7 @@ interface Product {
   categoria?: string;
   preco?: number | string;
   imagem_url?: string;
-  em_estoque?: boolean;
+  estoque_qtd?: number; 
 }
 
 export default function ProductArsenal({
@@ -220,48 +27,42 @@ export default function ProductArsenal({
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("TODOS");
 
+  // 1. Geração de categorias com verificação de erro
   const categories = useMemo(() => {
-    const rawCats =
-      products
-        ?.map((p) => p.categoria)
-        .filter((cat): cat is string => Boolean(cat)) || [];
+    if (!Array.isArray(products)) return ["TODOS"];
+    const rawCats = products
+      .map((p) => p?.categoria)
+      .filter((cat): cat is string => Boolean(cat));
     return ["TODOS", ...Array.from(new Set(rawCats))];
   }, [products]);
 
+  // 2. Filtro de busca com verificação de nulos
   const filtered = useMemo(() => {
+    if (!Array.isArray(products)) return [];
     return products.filter((p) => {
-      const nome = p.nome?.toLowerCase() || "";
-      const marca = p.marca?.toLowerCase() || "";
-      const cat = p.categoria || "";
+      const nome = p?.nome?.toLowerCase() || "";
+      const marca = p?.marca?.toLowerCase() || "";
+      const cat = p?.categoria || "";
       const term = searchTerm.toLowerCase();
-
-      const matchSearch = nome.includes(term) || marca.includes(term);
-      const matchCat = activeCategory === "TODOS" || cat === activeCategory;
-
-      return matchSearch && matchCat;
+      return (
+        (nome.includes(term) || marca.includes(term)) &&
+        (activeCategory === "TODOS" || cat === activeCategory)
+      );
     });
   }, [products, searchTerm, activeCategory]);
 
-  if (loading)
-    return (
-      <div
-        style={{
-          padding: "100px",
-          textAlign: "center",
-          color: "var(--primary-color, #00ff88)",
-        }}
-      >
-        SINCRONIZANDO INVENTÁRIO...
-      </div>
-    );
+  if (loading) return <LoadingWrapper>CARREGANDO INVENTÁRIO...</LoadingWrapper>;
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: "10px", maxWidth: "1400px", margin: "0 auto", width: '100%'}}>
+      <div style={{ width: '100%', margin:"1rem", color: "var(--gold-color)", fontSize:"1rem"}}>
+        <h2>Produtos golden razor</h2>
+        </div>
       <FilterSection>
         <SearchBar>
           <HiSearch size={20} />
           <input
-            placeholder="PROCURAR EQUIPAMENTO..."
+            placeholder="BUSCAR NO ARSENAL..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -270,7 +71,7 @@ export default function ProductArsenal({
         <CategoryTabs>
           {categories.map((cat) => (
             <Tab
-              key={cat}
+              key={`cat-${cat}`}
               $active={activeCategory === cat}
               onClick={() => setActiveCategory(cat)}
             >
@@ -290,132 +91,72 @@ export default function ProductArsenal({
       >
         <AnimatePresence mode="popLayout">
           {filtered.length > 0 ? (
-            filtered.map((product) => (
-              <ProductCard
-                key={product.id}
-                layout
-                $outOfStock={!product.em_estoque}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-              >
-                <div className="image-wrapper">
-                  {!product.em_estoque && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        background: "var(--error-color, #ff4444)",
-                        color: "#fff",
-                        padding: "4px 10px",
-                        borderRadius: "4px",
-                        fontSize: "8px",
-                        fontWeight: "900",
-                        zIndex: 10,
-                      }}
-                    >
-                      ESGOTADO
-                    </div>
-                  )}
-                  <img
-                    src={
-                      product.imagem_url || "https://via.placeholder.com/200"
-                    }
-                    alt={product.nome}
-                  />
-                </div>
+            filtered.map((product) => {
+              // Garante que o estoque seja tratado como número
+              const qtd = Number(product?.estoque_qtd || 0);
+              const temEstoque = qtd > 0;
 
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginBottom: "5px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: "var(--primary-color, #00ff88)",
-                        fontSize: "9px",
-                        fontWeight: "900",
-                      }}
-                    >
-                      {product.categoria?.toUpperCase() || "SEM CATEGORIA"}
-                    </span>
-                    <span
-                      style={{
-                        color: "var(--text-dark, #666)",
-                        fontSize: "9px",
-                      }}
-                    >
-                      {product.marca}
-                    </span>
-                  </div>
-                  <h3
-                    style={{
-                      fontSize: "1rem",
-                      color: "#fff",
-                      margin: "0 0 15px 0",
-                    }}
-                  >
-                    {product.nome || "Produto sem nome"}
-                  </h3>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-end",
-                    marginTop: "20px",
-                  }}
+              return (
+                <ProductCard
+                  key={product.id}
+                  layout
+                  $outOfStock={!temEstoque}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                 >
-                  <div>
-                    <div
-                      style={{
-                        fontSize: "0.5rem",
-                        color: "var(--text-dark, #666)",
-                        fontWeight: "900",
-                      }}
-                    >
-                      VALOR
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "1.2rem",
-                        fontWeight: "900",
-                        color: product.em_estoque
-                          ? "var(--success-color, #00ff88)"
-                          : "var(--text-dark, #666)",
-                      }}
-                    >
-                      R$ {Number(product.preco || 0).toFixed(2)}
-                    </div>
+                  <div className="image-wrapper">
+                    {!temEstoque && <Badge>ESGOTADO</Badge>}
+                    <img
+                      src={
+                        product?.imagem_url || "https://via.placeholder.com/300"
+                      }
+                      alt={product?.nome}
+                    />
                   </div>
 
-                  <MainBtn
-                    disabled={!product.em_estoque}
-                    onClick={() => navigate(`/produtos/${product.id}`)}
-                    style={{ width: "120px" }}
-                  >
-                    {product.em_estoque ? (
-                      <>
-                        DETALHES <FaArrowRight className="arrow-icon" />
-                      </>
-                    ) : (
-                      "OFFLINE"
-                    )}
-                  </MainBtn>
-                </div>
-              </ProductCard>
-            ))
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span className="category-label">
+                        {product?.categoria}
+                      </span>
+                      <span className="brand-label">{product?.marca}</span>
+                    </div>
+                    <h3 className="product-title">{product?.nome}</h3>
+                    <span
+                      style={{ fontSize: "0.7rem", color: "var(--text-dark)" }}
+                    >
+                      {temEstoque ? `${qtd} em estoque` : "Indisponível"}
+                    </span>
+                  </div>
+
+                  <div className="card-footer">
+                    <div>
+                      <div className="price-label">PREÇO</div>
+                      <div className="price-value">
+                        R$ {Number(product?.preco || 0).toFixed(2)}
+                      </div>
+                    </div>
+
+                    <MainBtn
+                      disabled={!temEstoque}
+                      onClick={() => navigate(`/produtos/${product.id}`)}
+                    >
+                      {temEstoque ? "DETALHES" : "OFFLINE"}
+                    </MainBtn>
+                  </div>
+                </ProductCard>
+              );
+            })
           ) : (
-            <EmptyArsenal
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
+            <EmptyArsenal>
               <FaBoxOpen size={40} />
-              <p>NENHUM EQUIPAMENTO ENCONTRADO NO ARQUIVO.</p>
+              <p>NENHUM ITEM ENCONTRADO.</p>
             </EmptyArsenal>
           )}
         </AnimatePresence>
@@ -423,3 +164,154 @@ export default function ProductArsenal({
     </div>
   );
 }
+
+// --- ESTILOS COM AS CORES :ROOT FORNECIDAS ---
+
+const FilterSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 40px;
+`;
+
+const SearchBar = styled.div`
+  display: flex;
+  align-items: center;
+  background: var(--bg-darker);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 20px;
+  gap: 15px;
+  input {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    width: 100%;
+    outline: none;
+  }
+  svg {
+    color: var(--primary-color);
+  }
+`;
+
+const CategoryTabs = styled.div`
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+`;
+
+const Tab = styled.button<{ $active: boolean }>`
+  background: ${(props) =>
+    props.$active ? "var(--primary-color)" : "var(--card-glass)"};
+  color: ${(props) => (props.$active ? "#000" : "var(--text-muted)")};
+  border: 1px solid
+    ${(props) =>
+      props.$active ? "var(--primary-color)" : "var(--border-color)"};
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+  text-transform: uppercase;
+`;
+
+const ProductCard = styled(motion.div)<{ $outOfStock: boolean }>`
+  background: var(--card-color);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  opacity: ${(props) => (props.$outOfStock ? 0.6 : 1)};
+
+  .image-wrapper {
+    height: 180px;
+    background: var(--bg-darker);
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    position: relative;
+    img {
+      max-height: 80%;
+      filter: ${(props) => (props.$outOfStock ? "grayscale(1)" : "none")};
+    }
+  }
+
+  .product-title {
+    font-size: 1rem;
+    color: var(--text-color);
+    margin: 10px 0;
+  }
+  .category-label {
+    color: var(--primary-color);
+    font-size: 9px;
+    font-weight: 900;
+  }
+  .brand-label {
+    color: var(--text-dark);
+    font-size: 9px;
+  }
+
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 20px;
+  }
+  .price-label {
+    font-size: 0.5rem;
+    color: var(--text-dark);
+    font-weight: 900;
+  }
+  .price-value {
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: var(--text-color);
+  }
+`;
+
+const Badge = styled.div`
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: var(--error-color);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 8px;
+  font-weight: 900;
+  z-index: 10;
+`;
+
+const MainBtn = styled.button`
+  background: var(--primary-color);
+  color: #000;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 900;
+  cursor: pointer;
+  font-size: 0.65rem;
+  &:disabled {
+    background: var(--bg-darker);
+    color: var(--text-dark);
+    border: 1px solid var(--border-color);
+    cursor: not-allowed;
+  }
+`;
+
+const LoadingWrapper = styled.div`
+  padding: 100px;
+  text-align: center;
+  color: var(--primary-color);
+`;
+
+const EmptyArsenal = styled.div`
+  grid-column: 1 / -1;
+  padding: 100px;
+  text-align: center;
+  color: var(--text-dark);
+`;

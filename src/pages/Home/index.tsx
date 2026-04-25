@@ -1,14 +1,15 @@
-import  { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 import { motion, animate, useMotionValue, useTransform } from "framer-motion";
-import { useAuth } from "@clerk/clerk-react";
-import { ChevronRight, MapPin, Clock, Camera, Star } from "lucide-react";
+import { useAuth, useUser} from "@clerk/clerk-react";
+import { ChevronRight, Star } from "lucide-react";
 
 import { api } from "../../services/api";
 import { HomeGlobalStyle, shine } from "./HomeStyles";
 import { MainButton, PriceCard } from "./HomeComponents";
 
+import UltraPremiumFooter from "./Footer";
 
 const Hero = styled.section`
   height: 100vh;
@@ -172,7 +173,20 @@ export default function Home() {
     loadHomeData();
   }, []);
 
-  const destination = isSignedIn ? "/dashboardClient" : "/login";
+  const { user } = useUser();
+
+  const getDestination = () => {
+    if (!isSignedIn) return "/login";
+
+    const role = user?.publicMetadata?.role;
+
+    if (role === "admin") return "/admin";
+    if (role === "barber") return "/barber";
+
+    return "/client";
+  };
+
+  const destination = getDestination();
 
   return (
     <>
@@ -363,107 +377,7 @@ export default function Home() {
         </div>
       </GalleryGrid>
 
-      <footer
-        style={{
-          background: "var(--bg-darker)",
-          padding: "120px 10% 60px",
-          borderTop: `1px solid var(--border-color)`,
-        }}
-      >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-            gap: "80px",
-            marginBottom: "100px",
-          }}
-        >
-          <FooterSection
-            icon={<MapPin size={20} />}
-            title="LOCALIZAÇÃO"
-            text="Guarulhos, São Paulo"
-          />
-          <FooterSection
-            icon={<Clock size={20} />}
-            title="DISPONIBILIDADE"
-            text="Seg - Sáb: 09:00 às 20:00"
-          />
-          <div>
-            <h4
-              style={{
-                color: "var(--primary-color)",
-                fontSize: "0.65rem",
-                letterSpacing: "3px",
-                marginBottom: "25px",
-              }}
-            >
-              SOCIAL
-            </h4>
-            <a
-              href="#"
-              style={{
-                color: "var(--text-color)",
-                textDecoration: "none",
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                fontSize: "0.9rem",
-                opacity: 0.7,
-              }}
-            >
-              <Camera size={20} />
-              <span>@goldenrazor_studio</span>
-            </a>
-          </div>
-        </div>
-        <div
-          style={{
-            textAlign: "center",
-            opacity: 0.2,
-            fontSize: "0.6rem",
-            color: "var(--text-color)",
-            letterSpacing: "5px",
-          }}
-        >
-          © 2026 GOLDEN RAZOR // DESIGNED BY GABRIEL FAGUNDES
-        </div>
-      </footer>
+      <UltraPremiumFooter />
     </>
-  );
-}
-
-function FooterSection({
-  icon,
-  title,
-  text,
-}: {
-  icon: any;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div>
-      <h4
-        style={{
-          color: "var(--primary-color)",
-          fontSize: "0.65rem",
-          letterSpacing: "3px",
-          marginBottom: "25px",
-        }}
-      >
-        {title}
-      </h4>
-      <p
-        style={{
-          display: "flex",
-          gap: "15px",
-          color: "var(--text-muted)",
-          fontSize: "0.9rem",
-          alignItems: "center",
-        }}
-      >
-        <span style={{ color: "var(--text-color)" }}>{icon}</span> {text}
-      </p>
-    </div>
   );
 }

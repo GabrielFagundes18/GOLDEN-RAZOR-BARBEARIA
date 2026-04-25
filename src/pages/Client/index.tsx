@@ -2,12 +2,15 @@ import React, { useState, useEffect, useCallback } from "react";
 import styled, { createGlobalStyle } from "styled-components";
 import { useUser } from "@clerk/clerk-react";
 import { motion } from "framer-motion";
-import { Loader2, MapPin, ShieldCheck, Target, Menu, X } from "lucide-react"; // Adicionei Menu e X
+import { Loader2, MapPin, ShieldCheck, Target } from "lucide-react";
 
-import { Sidebar } from "./Sidebar";
+import { Sidebar } from "../../components/Sidebar/Sidebar";
 import WelcomeBanner from "./WelcomeBanner";
 import AppointmentList from "./AppointmentList";
 import { api } from "../../services/api";
+import { Outlet, useLocation } from "react-router-dom";
+
+/* ---------------- GLOBAL ---------------- */
 
 const GlobalStyle = createGlobalStyle`
   body { 
@@ -17,267 +20,143 @@ const GlobalStyle = createGlobalStyle`
     margin: 0; 
     overflow-x: hidden; 
   }
-  .sync { 
-    font-family: 'Syncopate', sans-serif; 
-    letter-spacing: 1px; 
-    text-transform: uppercase; 
-  }
 `;
+
+/* ---------------- LAYOUT ---------------- */
 
 const RootLayout = styled.div`
   display: flex;
   min-height: 100vh;
-  flex-direction: column; /* Mobile first */
-
-  @media (min-width: 1025px) {
-    flex-direction: row;
-  }
 `;
 
 const ContentWrapper = styled.main`
   flex: 1;
-  padding: 20px;
-  width: 100%;
-  box-sizing: border-box;
-
-  /* Ajuste para Desktop */
-  @media (min-width: 1025px) {
-    margin-left: 260px; /* Largura da Sidebar */
-    padding: 40px;
-  }
+  padding: 30px;
 `;
+
+/* ---------------- DASHBOARD GRID ---------------- */
 
 const DashboardGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr; /* Empilhado no mobile */
-  gap: 20px;
-  margin-top: 20px;
+  grid-template-columns: 1fr 340px;
+  gap: 30px;
+  margin-top: 30px;
 
-  @media (min-width: 1200px) {
-    grid-template-columns: 1fr 340px; /* Grid original no desktop */
-    gap: 30px;
-    margin-top: 30px;
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
   }
 `;
 
 const TacticalCard = styled(motion.div)`
   background: var(--card-glass);
-  backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
   border-radius: 24px;
-  padding: 20px;
-  min-height: auto;
-
-  @media (min-width: 768px) {
-    padding: 30px;
-    min-height: 500px;
-  }
+  padding: 30px;
+  backdrop-filter: blur(12px);
 `;
 
+/* ---------------- COMPONENT ---------------- */
 
-const MobileHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 15px 20px;
-  background: var(--bg-darker);
-  border-bottom: 1px solid var(--border-color);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-
-  @media (min-width: 1025px) {
-    display: none;
-  }
-`;
-interface ClientDashboardProps {
-  children?: React.ReactNode;
-}
-
-export default function ClientDashboard({ children }: ClientDashboardProps) {
+export default function ClientDashboard() {
   const { user, isLoaded } = useUser();
-  const [activeTab, setActiveTab] = useState("overview");
-  const [pontos, setPontos] = useState(0);
-  const [loadingStats, setLoadingStats] = useState(true);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Estado para o menu
+  const location = useLocation();
 
-  const fetchDashboardData = useCallback(async () => {
+  const [pontos, setPontos] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const isHome = location.pathname === "/client";
+
+  const fetchData = useCallback(async () => {
     if (!user?.id) return;
+
     try {
-      setLoadingStats(true);
-      const response = await api.get(`/profile/${user.id}`);
-      setPontos(response.data.pontos || 0);
-    } catch (error) {
-      console.error("Erro ao carregar métricas táticas:", error);
+      setLoading(true);
+      const res = await api.get(`/profile/${user.id}`);
+      setPontos(res.data.pontos || 0);
+    } catch (err) {
+      console.log(err);
     } finally {
-      setLoadingStats(false);
+      setLoading(false);
     }
   }, [user?.id]);
 
   useEffect(() => {
-    if (isLoaded && user) {
-      fetchDashboardData();
-    }
-  }, [isLoaded, user, fetchDashboardData]);
+    if (isLoaded && user) fetchData();
+  }, [isLoaded, user, fetchData]);
 
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [activeTab]);
-
-  if (!isLoaded || loadingStats) {
+  if (!isLoaded || loading) {
     return (
       <div
         style={{
           height: "100vh",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           background: "var(--bg-color)",
-          gap: "20px",
+          flexDirection: "column",
+          gap: 15,
         }}
       >
-        <Loader2
-          className="animate-spin"
-          color="var(--primary-color)"
-          size={40}
-        />
-        <span
-          className="sync"
-          style={{ fontSize: "0.6rem", color: "var(--primary-color)" }}
-        >
-          Sincronizando Protocolos...
-        </span>
+        <Loader2 size={40} className="animate-spin" />
+        <span>Sincronizando...</span>
       </div>
     );
   }
-
-  const progressoCiclo = pontos > 0 && pontos % 10 === 0 ? 10 : pontos % 10;
 
   return (
     <>
       <GlobalStyle />
 
-      <MobileHeader>
-        <span
-          className="sync"
-          style={{ fontSize: "0.8rem", fontWeight: "bold" }}
-        >
-          GOLDEN RAZOR
-        </span>
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--text-color)",
-            cursor: "pointer",
-          }}
-        >
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </MobileHeader>
-
       <RootLayout>
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          userName={user?.firstName}
-          isOpen={isMobileMenuOpen}
-        />
+        <Sidebar />
 
         <ContentWrapper>
           <WelcomeBanner pontos={pontos} />
 
-          {children ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{ marginTop: "30px" }}
-            >
-              {children}
-            </motion.div>
-          ) : (
+          {/* 🔥 AQUI É O PONTO PRINCIPAL */}
+          {isHome ? (
             <DashboardGrid>
-              <section>
-                <TacticalCard
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginBottom: "20px",
-                    }}
-                  >
-                    <span
-                      className="sync"
-                      style={{
-                        fontSize: "0.6rem",
-                        color: "var(--primary-color)",
-                      }}
-                    >
-                      // PROTOCOLO_DE_AGENDAMENTOS
-                    </span>
-                    <Target size={14} color="var(--primary-color)" />
-                  </div>
-                  <AppointmentList />
-                </TacticalCard>
-              </section>
-
-              <aside
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "20px",
-                }}
+              {/* LEFT */}
+              <TacticalCard
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
               >
-                <MiniCard title="COORDENADAS" icon={<MapPin size={14} />}>
-                  <p
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "var(--text-muted)",
-                      margin: 0,
-                    }}
-                  >
-                    Unidade Maia - Guarulhos
-                  </p>
-                </MiniCard>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: 20,
+                  }}
+                >
+                  <span style={{ fontSize: 12 }}>// AGENDAMENTOS</span>
+                  <Target size={14} />
+                </div>
 
-                <MiniCard title="STATUS XP" icon={<ShieldCheck size={14} />}>
-                  <div
-                    style={{
-                      fontSize: "1.8rem",
-                      fontWeight: "900",
-                      color:
-                        progressoCiclo === 10
-                          ? "var(--gold-bright)"
-                          : "var(--text-color)",
-                      fontFamily: "Syncopate",
-                    }}
-                  >
-                    {pontos} <span style={{ fontSize: "0.8rem" }}>PTS</span>
-                  </div>
-                  <small
-                    style={{
-                      color:
-                        progressoCiclo === 10
-                          ? "var(--gold-color)"
-                          : "var(--text-muted)",
-                      fontSize: "0.65rem",
-                      fontWeight: "bold",
-                      display: "block",
-                      marginTop: "4px",
-                    }}
-                  >
-                    {progressoCiclo === 10
-                      ? "MISSION ACCOMPLISHED: CORTE LIBERADO!"
-                      : `FALTA(M) ${10 - progressoCiclo} CORTE(S) PARA O BÔNUS`}
-                  </small>
-                </MiniCard>
-              </aside>
+                <AppointmentList />
+              </TacticalCard>
+
+              {/* RIGHT */}
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 20 }}
+              >
+                <Card title="LOCALIZAÇÃO" icon={<MapPin size={14} />}>
+                  Unidade Maia - Guarulhos
+                </Card>
+
+                <Card title="XP" icon={<ShieldCheck size={14} />}>
+                  <h1 style={{ margin: 0 }}>{pontos} PTS</h1>
+                </Card>
+              </div>
             </DashboardGrid>
+          ) : (
+            /* 🔥 OUTLET SÓ PARA ROTAS INTERNAS */
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              style={{ marginTop: 30 }}
+            >
+              <Outlet />
+            </motion.div>
           )}
         </ContentWrapper>
       </RootLayout>
@@ -285,38 +164,24 @@ export default function ClientDashboard({ children }: ClientDashboardProps) {
   );
 }
 
-function MiniCard({ title, icon, children }: any) {
+/* ---------------- CARD ---------------- */
+
+function Card({ title, icon, children }: any) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      whileHover={{ scale: 1.02, borderColor: "var(--primary-color)" }}
+    <div
       style={{
         background: "var(--card-glass)",
-        padding: "22px",
-        borderRadius: "24px",
-        border: `1px solid var(--border-color)`,
-        transition: "all 0.3s ease",
-        backdropFilter: "blur(12px)",
-        width: "100%",
-        boxSizing: "border-box",
+        padding: 20,
+        borderRadius: 20,
+        border: "1px solid var(--border-color)",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          color: "var(--primary-color)",
-          marginBottom: "12px",
-        }}
-      >
+      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
         {icon}
-        <span className="sync" style={{ fontSize: "0.6rem" }}>
-          {title}
-        </span>
+        <strong>{title}</strong>
       </div>
+
       {children}
-    </motion.div>
+    </div>
   );
 }

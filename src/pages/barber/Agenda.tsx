@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 import { api } from "../../services/api";
-import Sidebar from "./Sidebar";
+
 
 const Layout = styled.div`
   display: flex;
@@ -35,7 +35,7 @@ const MainContent = styled.main`
 
 const ContentWrapper = styled.div`
   width: 100%;
-  max-width: 1000px;
+  max-width: 1400px;
 `;
 
 const HeaderSection = styled.div`
@@ -232,7 +232,7 @@ export const AgendaDoDia: React.FC = () => {
 
   return (
     <Layout>
-      <Sidebar />
+      
       <MainContent>
         <ContentWrapper>
           <HeaderSection>

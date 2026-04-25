@@ -4,17 +4,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Filter, User, Loader2 } from "lucide-react";
 import { api } from "../../services/api";
-import Sidebar from "./Sidebar";
 
 // --- Estilos Manter os mesmos ---
 const Layout = styled.div`
   display: flex;
-  background: var(--bg-color);
   min-height: 100vh;
   color: var(--text-color);
   font-family: "Inter", sans-serif;
-    background-image: linear-gradient(var(--scanline-color) 1px, transparent 1px);
-  background-size: 100% 4px;
 `;
 const Main = styled.main`
   flex: 1;
@@ -25,7 +21,7 @@ const Main = styled.main`
 `;
 const Wrapper = styled.div`
   width: 100%;
-  max-width: 1000px;
+  max-width: 1400px;
 `;
 
 const StatCard = styled.div<{ $color: string }>`
@@ -98,7 +94,6 @@ export const HistoricoGlobal = () => {
   if (loading || !data)
     return (
       <Layout>
-        <Sidebar />
         <Main>
           <Loader2 className="animate-spin" color="var(--primary-color)" />
         </Main>
@@ -131,7 +126,6 @@ export const HistoricoGlobal = () => {
 
   return (
     <Layout>
-      <Sidebar />
       <Main>
         <Wrapper>
         
