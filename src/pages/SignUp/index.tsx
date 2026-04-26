@@ -9,7 +9,7 @@ const Container = styled.div`
   align-items: center;
   justify-content: center;
   /* Fundo claro levemente acinzentado */
-  background-color: #f8f9fa; 
+  background-color: #f8f9fa;
 
   /* Grid sutil em cinza claro */
   background-image:
@@ -24,7 +24,11 @@ const Container = styled.div`
     position: absolute;
     inset: 0;
     /* Vinheta clara para dar foco no centro */
-    background: radial-gradient(circle at center, transparent 20%, #f8f9fa 100%);
+    background: radial-gradient(
+      circle at center,
+      transparent 20%,
+      #f8f9fa 100%
+    );
     pointer-events: none;
     z-index: 1;
   }
@@ -39,10 +43,10 @@ const SignUpPage: React.FC = () => {
   return (
     <Container>
       <SignUp
-        signInUrl="/login"
         routing="path"
         path="/cadastro"
-        afterSignUpUrl="/dashboard"
+        signInUrl="/login"
+        afterSignUpUrl="/client"
         appearance={{
           layout: {
             socialButtonsVariant: "blockButton",
@@ -73,7 +77,7 @@ const SignUpPage: React.FC = () => {
             },
             formButtonPrimary: {
               /* Botão principal com a cor de destaque */
-              backgroundColor: "#e11d48", 
+              backgroundColor: "#e11d48",
               color: "#ffffff",
               fontWeight: "700",
               borderRadius: "6px",
@@ -111,7 +115,7 @@ const SignUpPage: React.FC = () => {
             },
             footerActionLink: {
               /* Link em dourado/bronze para elegância */
-              color: "#b7791f", 
+              color: "#b7791f",
               fontWeight: "700",
               "&:hover": {
                 color: "#d69e2e",
@@ -142,7 +146,7 @@ const SignUpPage: React.FC = () => {
             },
             footerActionText: {
               color: "#718096",
-            }
+            },
           },
         }}
       />

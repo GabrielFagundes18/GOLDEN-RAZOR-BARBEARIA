@@ -70,10 +70,10 @@ const LoginPage: React.FC = () => {
   return (
     <LoginContainer>
       <SignIn
-        signUpUrl="/cadastro"
-        routing="virtual" 
-        fallbackRedirectUrl="/client"
-        signUpFallbackRedirectUrl="/client"
+   routing="path"
+  path="/login"
+  signUpUrl="/cadastro"
+  fallbackRedirectUrl="/client"
         appearance={{
           layout: {
             socialButtonsVariant: "blockButton",
