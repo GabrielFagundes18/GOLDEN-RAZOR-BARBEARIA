@@ -9,10 +9,7 @@ const LoginContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Fundo claro para aliviar a vista */
   background-color: #f8f9fa;
-
-  /* Grid sutil em cinza muito claro */
   background-image:
     linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
@@ -24,7 +21,6 @@ const LoginContainer = styled.div`
     content: "";
     position: absolute;
     inset: 0;
-    /* Efeito de foco suave no centro */
     background: radial-gradient(circle at center, transparent 10%, #f8f9fa 90%);
     pointer-events: none;
     z-index: 1;
@@ -41,26 +37,27 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 🔥 evita loop infinito de redirect
+  // 🔥 Ref para garantir que o redirecionamento só ocorra uma vez após o login
   const hasRedirected = useRef(false);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || hasRedirected.current) return;
+    // Só executa a lógica se o Clerk carregou e o usuário está REALMENTE logado
+    if (!isLoaded || !isSignedIn || !user || hasRedirected.current) return;
 
     hasRedirected.current = true;
 
     const from = location.state?.from?.pathname;
     const role = user?.publicMetadata?.role as string;
 
-    console.log("ROLE:", role);
+    console.log("LOGIN SUCESSO - ROLE:", role);
 
-    // 🔥 evita voltar pra home automaticamente
+    // Se houver uma rota de origem (vinda de um ProtectedRoute), volta para ela
     if (from && from !== "/login" && from !== "/") {
       navigate(from, { replace: true });
       return;
     }
 
-    // 🔥 redirect por role
+    // Redirecionamento baseado na Role do usuário
     if (role === "admin") {
       navigate("/admin", { replace: true });
     } else if (role === "barber") {
@@ -69,14 +66,16 @@ const LoginPage: React.FC = () => {
       navigate("/client", { replace: true });
     }
   }, [isSignedIn, isLoaded, user, navigate, location]);
+
   return (
     <LoginContainer>
       <SignIn
         signUpUrl="/cadastro"
         routing="path"
         path="/login"
-        afterSignInUrl="/client"
-        redirectUrl="/client"
+        // 🔥 Propriedades atualizadas do Clerk para evitar redirecionamento precoce
+        fallbackRedirectUrl="/client" 
+        signUpFallbackRedirectUrl="/client"
         appearance={{
           layout: {
             socialButtonsVariant: "blockButton",
@@ -84,7 +83,6 @@ const LoginPage: React.FC = () => {
           },
           elements: {
             card: {
-              /* Card branco com sombra leve e moderna */
               backgroundColor: "#ffffff",
               border: "1px solid #e2e8f0",
               boxShadow: "0 10px 25px rgba(0, 0, 0, 0.05)",
@@ -105,7 +103,6 @@ const LoginPage: React.FC = () => {
               marginTop: "8px",
             },
             formButtonPrimary: {
-              /* Botão de ação com sua cor principal em destaque */
               backgroundColor: "#e11d48",
               color: "#ffffff",
               fontWeight: "700",
@@ -132,28 +129,18 @@ const LoginPage: React.FC = () => {
               border: "1px solid #cbd5e0",
               borderRadius: "6px",
               height: "44px",
-              "&::placeholder": {
-                color: "#a0aec0",
-              },
               "&:focus": {
                 border: "2px solid #e11d48",
                 boxShadow: "none",
               },
             },
             footerActionLink: {
-              /* Link de cadastro em tom dourado/bronze */
               color: "#b7791f",
               fontWeight: "700",
               "&:hover": {
                 color: "#d69e2e",
                 textDecoration: "underline",
               },
-            },
-            identityPreviewText: {
-              color: "#1a202c",
-            },
-            identityPreviewEditButtonIcon: {
-              color: "#e11d48",
             },
             dividerLine: {
               backgroundColor: "#e2e8f0",
@@ -172,9 +159,6 @@ const LoginPage: React.FC = () => {
                 backgroundColor: "#f7fafc",
                 borderColor: "#cbd5e0",
               },
-            },
-            footerActionText: {
-              color: "#718096",
             },
           },
         }}
