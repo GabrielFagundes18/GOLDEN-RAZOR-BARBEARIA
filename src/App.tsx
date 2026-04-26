@@ -36,8 +36,8 @@ import { AdminLayout } from "./pages/Admin/AdminLayout";
 import  BarberLayout  from "./pages/barber/BarberLayout";
 
 export default function App() {
-  const { user, isLoaded } = useUser();
-  if (!isLoaded) return null;
+  const { user} = useUser();
+
 
   return (
     <BrowserRouter>

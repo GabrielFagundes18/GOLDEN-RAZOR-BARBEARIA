@@ -71,10 +71,8 @@ const LoginPage: React.FC = () => {
     <LoginContainer>
       <SignIn
         signUpUrl="/cadastro"
-        routing="path"
-        path="/login"
-        // 🔥 Propriedades atualizadas do Clerk para evitar redirecionamento precoce
-        fallbackRedirectUrl="/client" 
+        routing="virtual" 
+        fallbackRedirectUrl="/client"
         signUpFallbackRedirectUrl="/client"
         appearance={{
           layout: {
