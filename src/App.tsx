@@ -46,7 +46,7 @@ export default function App() {
       <Routes>
         {/* PUBLIC */}
         <Route path="/" element={<GoldenRazor />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login/*" element={<LoginPage />} />
         <Route path="/cadastro/*" element={<SignUpPage />} />
 
         {/* CLIENT */}
@@ -117,7 +117,7 @@ export default function App() {
 
         {/* DEFAULT */}
 
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<Navigate to="/d" />} />
       </Routes>
     </BrowserRouter>
   );

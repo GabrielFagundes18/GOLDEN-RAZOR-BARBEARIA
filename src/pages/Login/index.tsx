@@ -41,9 +41,16 @@ const LoginPage: React.FC = () => {
   const hasRedirected = useRef(false);
 
   useEffect(() => {
-    // Só executa a lógica se o Clerk carregou e o usuário está REALMENTE logado
-    if (!isLoaded || !isSignedIn || !user || hasRedirected.current) return;
+    // 1. Só prossegue se o Clerk carregou
+    if (!isLoaded) return;
 
+    // 2. Se o usuário NÃO está logado, não faz nada (deixa ele digitar a senha)
+    if (!isSignedIn || !user) return;
+
+    // 3. Se já redirecionamos uma vez, para por aqui
+    if (hasRedirected.current) return;
+
+    // Agora sim, o usuário está logado e autenticado
     hasRedirected.current = true;
 
     const from = location.state?.from?.pathname;
@@ -51,29 +58,27 @@ const LoginPage: React.FC = () => {
 
     console.log("LOGIN SUCESSO - ROLE:", role);
 
-    // Se houver uma rota de origem (vinda de um ProtectedRoute), volta para ela
-    if (from && from !== "/login" && from !== "/") {
+    // Redirecionamento
+    if (from && from !== "/login" && from !== "/sasa") {
       navigate(from, { replace: true });
-      return;
-    }
-
-    // Redirecionamento baseado na Role do usuário
-    if (role === "admin") {
-      navigate("/admin", { replace: true });
-    } else if (role === "barber") {
-      navigate("/barber", { replace: true });
     } else {
-      navigate("/client", { replace: true });
+      // Lógica de roles
+      const paths: Record<string, string> = {
+        admin: "/admin",
+        barber: "/barber",
+        client: "/client",
+      };
+      navigate(paths[role] || "/client", { replace: true });
     }
   }, [isSignedIn, isLoaded, user, navigate, location]);
 
   return (
     <LoginContainer>
       <SignIn
-   routing="path"
-  path="/login"
-  signUpUrl="/cadastro"
-  fallbackRedirectUrl="/client"
+        routing="path"
+        path="/login"
+        signUpUrl="/cadastro"
+        fallbackRedirectUrl="/client"
         appearance={{
           layout: {
             socialButtonsVariant: "blockButton",
