@@ -152,8 +152,8 @@ export default function DashboardPremium() {
     setLoading(true);
     try {
       const [resAgenda, resVendas] = await Promise.all([
-        api.get("/barber/agenda-hoje"),
-        api.get("/vendas/historico"),
+        api.get("/schedules/daily"),
+        api.get("/sales/history"),
       ]);
       setAgenda(resAgenda.data);
       setVendas(resVendas.data?.slice(0, 12) || []);
@@ -168,15 +168,18 @@ export default function DashboardPremium() {
     fetchData();
   }, [fetchData]);
 
-  const finalizarCorte = async (id: number, clientId: string) => {
-    try {
-      await api.patch(`/agendamentos/${id}/finalizar`, { clientId });
-      toast.success("Atendimento finalizado!");
-      fetchData();
-    } catch (error) {
-      toast.error("Erro ao finalizar.");
-    }
-  };
+  const finalizarCorte = async (id: number) => {
+  console.log("Finalizando Agendamento ID:", id);
+  try {
+   
+    await api.patch(`/appointments/${id}/complete`);
+
+    toast.success("Atendimento finalizado!");
+    fetchData();
+  } catch (error) {
+    toast.error("Erro ao finalizar.");
+  }
+};
 
   return (
     <MainContainer>
@@ -210,9 +213,9 @@ export default function DashboardPremium() {
           >
             <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
           </ActionBtn>
-         <ActionBtn onClick={() => navigate("novo")}>
-  <PlusCircle size={18} /> NOVO AGENDAMENTO
-</ActionBtn>
+          <ActionBtn onClick={() => navigate("novo")}>
+            <PlusCircle size={18} /> NOVO AGENDAMENTO
+          </ActionBtn>
         </div>
       </div>
 
@@ -272,7 +275,8 @@ export default function DashboardPremium() {
                             {item.customerName}
                           </div>
                           <div style={{ fontSize: "0.7rem", color: "#444" }}>
-                            ID: {item.client_id?.substring(0, 8)}
+                            ID:{" "}
+                            {String(item.client_id || "").substring(0, 8)}{" "}
                           </div>
                         </td>
                         <td>
@@ -288,7 +292,7 @@ export default function DashboardPremium() {
                         <td style={{ textAlign: "right" }}>
                           <ActionBtn
                             onClick={() =>
-                              finalizarCorte(item.id, item.client_id)
+                              finalizarCorte(item.id)
                             }
                           >
                             Finalizar <ChevronRight size={16} />

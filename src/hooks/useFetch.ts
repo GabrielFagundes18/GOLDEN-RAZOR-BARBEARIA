@@ -16,7 +16,7 @@ export function useFetch<T>(url: string | null) {
       setData(res.data);
       setError(null);
     } catch (err) {
-      console.error("Erro na requisição Ninja:", err);
+      console.error("Erro na requisição:", err);
       setError(err);
     } finally {
       setLoading(false);

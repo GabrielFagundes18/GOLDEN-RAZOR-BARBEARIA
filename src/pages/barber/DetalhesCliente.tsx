@@ -7,37 +7,21 @@ import {
   Scissors,
   Mail,
   Phone,
-  ShieldCheck,
+  Save,
   Loader2,
   History,
+  Hash,
+  CheckCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../../services/api";
-
-// --- Interfaces para garantir consistência com o seu Back-end ---
-interface HistoricoItem {
-  data: string;
-  servico: string;
-  barbeiro: string;
-  valor: number;
-}
-
-interface ClienteData {
-  perfil: {
-    clerk_id: string;
-    nome: string;
-    email: string | null;
-    telefone: string | null;
-    pontos: number;
-  };
-  historico: HistoricoItem[];
-}
 
 // --- Estilos ---
 const Layout = styled.div`
   display: flex;
   min-height: 100vh;
-  color: var(--text-color, #fff);
+  color: #fff;
+  background: #0a0a0a;
 `;
 
 const MainContent = styled.main`
@@ -56,7 +40,7 @@ const Container = styled.div`
 const BackBtn = styled.button`
   background: none;
   border: none;
-  color: var(--text-dark, #666);
+  color: #666;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -64,86 +48,167 @@ const BackBtn = styled.button`
   margin-bottom: 2rem;
   font-size: 0.75rem;
   font-weight: 800;
+  transition: 0.2s;
   &:hover {
-    color: var(--primary-color, #f1c40f);
+    color: #f1c40f;
   }
 `;
 
-const ProfileHeader = styled.div`
-  background: var(--card-color, #1a1a1a);
-  border: 1px solid var(--border-color, #333);
-  padding: 2rem;
+// Card de Identificação (Apenas Visual)
+const InfoHeader = styled.div`
+  background: linear-gradient(135deg, #1a1a1a 0%, #111 100%);
+  border: 1px solid #333;
+  padding: 1.5rem 2rem;
   border-radius: 12px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 2rem;
-  margin-bottom: 2rem;
-  border-left: 4px solid var(--primary-color, #f1c40f);
-`;
+  margin-bottom: 1rem;
 
-const StatsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
+  .client-meta {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
 
-const StatCard = styled.div<{ $vip?: boolean }>`
-  background: var(--card-color, #1a1a1a);
-  border: 1px solid var(--border-color, #333);
-  padding: 1.5rem;
-  border-radius: 8px;
-  text-align: center;
-  .label {
+  .id-badge {
+    background: #000;
+    padding: 5px 12px;
+    border-radius: 4px;
     font-size: 0.6rem;
+    color: #f1c40f;
+    border: 1px solid #333;
+    font-weight: bold;
+  }
+`;
+
+// Card de Edição
+const EditForm = styled.div`
+  background: #1a1a1a;
+  border: 1px solid #333;
+  padding: 2rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+`;
+
+const InputGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+`;
+
+const Field = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-size: 0.65rem;
+    font-weight: 900;
     color: #666;
     text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 5px;
   }
-  .value {
-    display: block;
-    font-size: 2rem;
-    font-family: "Rajdhani";
-    color: ${(props) => (props.$vip ? "#ffd700" : "#fff")};
+
+  input {
+    background: #0a0a0a;
+    border: 1px solid #333;
+    padding: 0.9rem;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 0.9rem;
+    outline: none;
+    transition: 0.3s;
+    &:focus {
+      border-color: #f1c40f;
+      background: #000;
+    }
   }
 `;
 
-const HistoryRow = styled(motion.div)`
-  display: grid;
-  grid-template-columns: 120px 1.5fr 1fr 100px;
+const SaveBtn = styled.button`
+  background: #f1c40f;
+  color: #000;
+  border: none;
   padding: 1.2rem;
-  border-bottom: 1px solid #333;
+  border-radius: 6px;
+  font-weight: 900;
+  display: flex;
   align-items: center;
-  font-size: 0.9rem;
+  gap: 10px;
+  cursor: pointer;
+  margin-top: 2rem;
+  width: 100%;
+  justify-content: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: 0.3s;
+  &:hover:not(:disabled) {
+    background: #fff;
+    transform: translateY(-2px);
+  }
+  &:disabled {
+    opacity: 0.5;
+  }
 `;
 
 export const DetalhesCliente = () => {
-  // 1. IMPORTANTE: O nome 'id' aqui deve bater com o path do seu App.tsx (:id)
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [data, setData] = useState<ClienteData | null>(null);
+
+  const [formData, setFormData] = useState({
+    nome: "",
+    email: "",
+    telefone: "",
+    pontos: 0,
+  });
+  const [originalName, setOriginalName] = useState(""); // Para exibir no header fixo
+  const [historico, setHistorico] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const loadDetails = async () => {
-      // Se o id for "undefined" como string ou nulo, não faz a chamada
-      if (!id || id === "undefined") return;
-
+      if (!id) return;
       try {
         setLoading(true);
-        // Chamada para a rota que você testou no Postman
-        const res = await api.get(`/barber/clientes/${id}`);
-        setData(res.data);
+        const res = await api.get(`/customers/${id}/details`);
+        const p = res.data.perfil;
+
+        // Preenche os campos com o que já existe no banco
+        setFormData({
+          nome: p.nome || "",
+          email: p.email || "",
+          telefone: p.telefone || "",
+          pontos: Number(p.pontos) || 0,
+        });
+        setOriginalName(p.nome);
+        setHistorico(res.data.historico || []);
       } catch (err) {
-        console.error("Erro ao carregar detalhes do cliente");
+        console.error("Erro ao carregar");
       } finally {
         setLoading(false);
       }
     };
-
     loadDetails();
   }, [id]);
 
-  if (loading) {
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await api.put(`/customers/${id}`, formData);
+      setOriginalName(formData.nome); // Atualiza o nome do header
+      alert("✅ Alterações salvas!");
+    } catch (err) {
+      alert("❌ Erro ao salvar.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading)
     return (
       <Layout>
         <MainContent>
@@ -151,158 +216,202 @@ export const DetalhesCliente = () => {
         </MainContent>
       </Layout>
     );
-  }
-
-  if (!data) {
-    return (
-      <Layout>
-        <MainContent>
-          <Container>
-            <BackBtn onClick={() => navigate("/barber/clientes")}>
-              <ArrowLeft size={14} /> VOLTAR PARA LISTA
-            </BackBtn>
-            <p>Cliente não encontrado (ID: {id})</p>
-          </Container>
-        </MainContent>
-      </Layout>
-    );
-  }
 
   return (
     <Layout>
       <MainContent>
         <Container>
           <BackBtn onClick={() => navigate("/barber/clientes")}>
-            <ArrowLeft size={14} /> VOLTAR PARA LISTA
+            <ArrowLeft size={14} /> VOLTAR PARA A LISTA
           </BackBtn>
 
-          <ProfileHeader>
+          {/* HEADER DE IDENTIFICAÇÃO (Fixo para conferência) */}
+          <InfoHeader>
+            <div className="client-meta">
+              <div
+                style={{
+                  background: "#f1c40f",
+                  padding: "10px",
+                  borderRadius: "50%",
+                }}
+              >
+                <User size={24} color="#000" />
+              </div>
+              <div>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontFamily: "Rajdhani",
+                    fontSize: "1.8rem",
+                  }}
+                >
+                  {originalName}
+                </h2>
+                <span className="id-badge">ID: {id?.substring(0, 8)}...</span>
+              </div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: "0.6rem", color: "#666" }}>
+                STATUS ATUAL
+              </div>
+              <div
+                style={{
+                  color: "#2ecc71",
+                  fontWeight: "bold",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+              >
+                <CheckCircle size={14} /> CLIENTE ATIVO
+              </div>
+            </div>
+          </InfoHeader>
+
+          {/* FORMULÁRIO DE EDIÇÃO (Já vem preenchido) */}
+          <EditForm>
             <div
               style={{
-                background: "#000",
-                padding: "15px",
-                borderRadius: "50%",
+                marginBottom: "1.5rem",
+                borderBottom: "1px solid #333",
+                paddingBottom: "10px",
               }}
             >
-              <User size={40} color="#f1c40f" />
-            </div>
-            <div>
-              <div
+              <span
                 style={{
-                  color: "#f1c40f",
-                  fontSize: "0.6rem",
-                  fontWeight: 900,
-                }}
-              >
-                <ShieldCheck size={12} style={{ verticalAlign: "middle" }} />{" "}
-                ID: {data.perfil.clerk_id}
-              </div>
-              <h2
-                style={{
-                  fontSize: "2.5rem",
-                  margin: "5px 0",
-                  fontFamily: "Rajdhani",
-                }}
-              >
-                {data.perfil.nome}
-              </h2>
-              <div
-                style={{
-                  display: "flex",
-                  gap: "20px",
-                  color: "#aaa",
                   fontSize: "0.8rem",
+                  fontWeight: "bold",
+                  color: "#f1c40f",
                 }}
               >
-                <span>
-                  <Mail size={12} /> {data.perfil.email || "---"}
-                </span>
-                <span>
-                  <Phone size={12} /> {data.perfil.telefone || "---"}
-                </span>
-              </div>
-            </div>
-          </ProfileHeader>
-
-          <StatsGrid>
-            <StatCard>
-              <span className="label">Pontos Acumulados</span>
-              <span className="value">{data.perfil.pontos}</span>
-            </StatCard>
-            <StatCard>
-              <span className="label">Total de Visitas</span>
-              <span className="value">{data.historico.length}</span>
-            </StatCard>
-            <StatCard $vip={data.perfil.pontos >= 10}>
-              <span className="label">Status</span>
-              <span className="value">
-                {data.perfil.pontos >= 10 ? "Com benefícios" : "Sem benefícios"}
+                🔧 AJUSTAR INFORMAÇÕES
               </span>
-            </StatCard>
-          </StatsGrid>
+            </div>
 
+            <InputGrid>
+              <Field>
+                <label>
+                  <User size={12} /> Nome do Cliente
+                </label>
+                <input
+                  value={formData.nome}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nome: e.target.value })
+                  }
+                />
+              </Field>
+
+              <Field>
+                <label>
+                  <Hash size={12} /> Pontuação Fidelidade
+                </label>
+                <input
+                  type="number"
+                  value={formData.pontos}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pontos: Number(e.target.value) })
+                  }
+                />
+              </Field>
+
+              <Field>
+                <label>
+                  <Mail size={12} /> E-mail de Contato
+                </label>
+                <input
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                />
+              </Field>
+
+              <Field>
+                <label>
+                  <Phone size={12} /> Telefone / WhatsApp
+                </label>
+                <input
+                  value={formData.telefone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, telefone: e.target.value })
+                  }
+                />
+              </Field>
+            </InputGrid>
+
+            <SaveBtn onClick={handleSave} disabled={saving}>
+              {saving ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : (
+                <Save size={20} />
+              )}
+              ATUALIZAR CADASTRO
+            </SaveBtn>
+          </EditForm>
+
+          {/* HISTÓRICO (Para consulta rápida) */}
+          <div
+            style={{
+              padding: "0.5rem 1rem",
+              color: "#666",
+              fontSize: "0.7rem",
+              fontWeight: "bold",
+            }}
+          >
+            <History size={12} style={{ verticalAlign: "middle" }} /> ÚLTIMAS
+            PASSAGENS NA BARBEARIA
+          </div>
           <div
             style={{
               background: "#1a1a1a",
               borderRadius: "8px",
+              border: "1px solid #333",
               overflow: "hidden",
             }}
           >
-            <div
-              style={{
-                padding: "1rem",
-                background: "#000",
-                color: "#f1c40f",
-                fontWeight: "bold",
-                fontSize: "0.7rem",
-              }}
-            >
-              <History size={14} /> HISTÓRICO DE SERVIÇOS
-            </div>
-
-            <AnimatePresence>
-              {data.historico.length === 0 ? (
-                <div
-                  style={{
-                    padding: "3rem",
-                    textAlign: "center",
-                    color: "#666",
-                  }}
-                >
-                  Nenhum serviço concluído.
-                </div>
-              ) : (
-                data.historico.map((h, i) => (
-                  <HistoryRow
-                    // CORREÇÃO DE KEY AQUI:
-                    key={`hist-${i}-${h.data}`}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
+            {historico.length === 0 ? (
+              <div
+                style={{ padding: "2rem", textAlign: "center", color: "#444" }}
+              >
+                Sem histórico registrado.
+              </div>
+            ) : (
+              historico.map((h: any, i) => (
+                <HistoryRow key={i}>
+                  <div style={{ color: "#666" }}>
+                    {new Date(h.data).toLocaleDateString("pt-BR")}
+                  </div>
+                  <div style={{ fontWeight: "bold" }}>{h.servico}</div>
+                  <div style={{ color: "#f1c40f" }}>
+                    <Scissors size={12} /> {h.barbeiro}
+                  </div>
+                  <div
+                    style={{
+                      textAlign: "right",
+                      color: "#2ecc71",
+                      fontWeight: "900",
+                    }}
                   >
-                    <div style={{ color: "#666" }}>
-                      {new Date(h.data).toLocaleDateString("pt-BR")}
-                    </div>
-                    <div style={{ fontWeight: "bold" }}>{h.servico}</div>
-                    <div style={{ color: "#f1c40f" }}>
-                      <Scissors size={12} /> {h.barbeiro}
-                    </div>
-                    <div
-                      style={{
-                        textAlign: "right",
-                        color: "#2ecc71",
-                        fontWeight: "900",
-                      }}
-                    >
-                      R$ {Number(h.valor).toFixed(2)}
-                    </div>
-                  </HistoryRow>
-                ))
-              )}
-            </AnimatePresence>
+                    R$ {Number(h.valor).toFixed(2)}
+                  </div>
+                </HistoryRow>
+              ))
+            )}
           </div>
         </Container>
       </MainContent>
     </Layout>
   );
 };
+
+const HistoryRow = styled.div`
+  display: grid;
+  grid-template-columns: 120px 1.5fr 1fr 100px;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #222;
+  align-items: center;
+  font-size: 0.8rem;
+  &:last-child {
+    border-bottom: none;
+  }
+`;

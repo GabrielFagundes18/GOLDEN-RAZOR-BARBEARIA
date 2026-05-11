@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { HiSearch } from "react-icons/hi";
-import { FaArrowRight, FaBoxOpen } from "react-icons/fa";
+import { FaAngellist, FaBoxOpen } from "react-icons/fa";
 
 // --- INTERFACE ---
 interface Product {
@@ -92,7 +92,6 @@ export default function ProductArsenal({
         <AnimatePresence mode="popLayout">
           {filtered.length > 0 ? (
             filtered.map((product) => {
-              // Garante que o estoque seja tratado como número
               const qtd = Number(product?.estoque_qtd || 0);
               const temEstoque = qtd > 0;
 
@@ -109,7 +108,7 @@ export default function ProductArsenal({
                     {!temEstoque && <Badge>ESGOTADO</Badge>}
                     <img
                       src={
-                        product?.imagem_url || "https://via.placeholder.com/300"
+                        product?.imagem_url || "https://via.placeholder.com/400?text=Sem+Imagem"
                       }
                       alt={product?.nome}
                     />
@@ -145,7 +144,7 @@ export default function ProductArsenal({
 
                     <MainBtn
                       disabled={!temEstoque}
-                      onClick={() => navigate(`/produtos/${product.id}`)}
+                      onClick={() => navigate(`/client/produtos/${product.id}`)}
                     >
                       {temEstoque ? "DETALHES" : "OFFLINE"}
                     </MainBtn>

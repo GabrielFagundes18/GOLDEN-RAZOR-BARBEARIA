@@ -1,329 +1,307 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import {
-  User,
-  Scissors,
   CheckCircle,
-  Calendar as CalendarIcon,
+  Calendar,
   Loader2,
   Clock,
   Trash2,
+  User,
+  Scissors,
 } from "lucide-react";
-
 import { api } from "../../services/api";
 
+export const AgendaDoDia: React.FC = () => {
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<number | null>(null);
 
-const Layout = styled.div`
-  display: flex;
-  background: var(--bg-color);
-  min-height: 100vh;
-  color: var(--text-color);
-  font-family: "Inter", sans-serif;
-  background-image: linear-gradient(var(--scanline-color) 1px, transparent 1px);
-  background-size: 100% 4px;
-`;
+  const fetchAgenda = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get("/schedules/daily");
+      setAppointments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Erro ao carregar lista:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-const MainContent = styled.main`
-  flex: 1;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
+  useEffect(() => {
+    fetchAgenda();
+  }, [fetchAgenda]);
 
-const ContentWrapper = styled.div`
-  width: 100%;
+  const handleComplete = async (id: number) => {
+    setProcessingId(id);
+    try {
+      await api.patch(`/appointments/${id}/complete`);
+      setAppointments((prev) => prev.filter((app) => app.id !== id));
+    } catch (err: any) {
+      alert("Falha ao concluir serviço.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Deseja realmente excluir este agendamento?")) return;
+    setProcessingId(id);
+    try {
+      await api.delete(`/appointments/${id}`);
+      setAppointments((prev) => prev.filter((app) => app.id !== id));
+    } catch (err) {
+      alert("Erro ao excluir.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  return (
+    <Main>
+      <Header>
+        <div className="title-group">
+          <Scissors size={24} color="#ffcc00" />
+          <h2>Agenda</h2>
+        </div>
+        <DateLabel>
+          <Calendar size={14} />
+          {new Date()
+            .toLocaleDateString("pt-BR", { weekday: "long", day: "numeric" })
+            .toUpperCase()}
+        </DateLabel>
+      </Header>
+
+      <Container>
+        <THeader>
+          <div>Horário / Data</div>
+          <div className="hide-mobile">Cliente</div>
+          <div>Serviço</div>
+          <div style={{ textAlign: "right" }}>Ações</div>
+        </THeader>
+
+        <AnimatePresence mode="popLayout">
+          {loading ? (
+            <StatusBox key="loading">
+              <Loader2 className="animate-spin" size={32} color="#ffcc00" />
+              <p>Carregando...</p>
+            </StatusBox>
+          ) : appointments.length === 0 ? (
+            <StatusBox key="empty">
+              <Clock size={40} color="#333" />
+              <p>Nenhum agendamento.</p>
+            </StatusBox>
+          ) : (
+            appointments.map((app) => (
+              <Row
+                key={app.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                layout
+              >
+                <div className="time-col">
+                  <span className="time">{app.time}</span>
+                  <span className="date-info">{app.dateDay || app.date}</span>
+                </div>
+
+                <div className="client-col">
+                  <div className="client">
+                    <User size={14} color="#888" />
+                    <span>{app.customerName || "Cliente"}</span>
+                  </div>
+                  <span className="service-name">{app.service}</span>
+                </div>
+
+                <div className="hide-mobile">
+                  <Badge $status={app.status}>{app.status}</Badge>
+                </div>
+
+                <Actions>
+                  <Btn
+                    $color="#ef4444"
+                    onClick={() => handleDelete(app.id)}
+                    disabled={processingId === app.id}
+                  >
+                    <Trash2 size={18} />
+                  </Btn>
+                  <Btn
+                    $color="#22c55e"
+                    onClick={() => handleComplete(app.id)}
+                    disabled={processingId === app.id}
+                  >
+                    {processingId === app.id ? (
+                      <Loader2 className="animate-spin" size={18} />
+                    ) : (
+                      <CheckCircle size={18} />
+                    )}
+                  </Btn>
+                </Actions>
+              </Row>
+            ))
+          )}
+        </AnimatePresence>
+      </Container>
+    </Main>
+  );
+};
+
+// --- ESTILOS AJUSTADOS PARA RESPONSIVIDADE ---
+
+const Main = styled.div`
+  padding: 1rem;
   max-width: 1400px;
+  margin: 0 auto;
+  color: #eee;
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
 `;
 
-const HeaderSection = styled.div`
+const Header = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid var(--border-color);
+  align-items: center;
+  margin-bottom: 1.5rem;
   padding-bottom: 1rem;
+  border-bottom: 1px solid #222;
 
-  .title {
-    span {
-      color: var(--primary-color);
-      font-size: 0.6rem;
-      font-weight: 900;
-      letter-spacing: 3px;
-    }
+  h2 {
+    font-size: 1.2rem;
+  }
+  @media (min-width: 768px) {
     h2 {
-      font-family: "Rajdhani", sans-serif;
-      font-size: 2.2rem;
-      text-transform: uppercase;
-      margin: 0;
+      font-size: 1.5rem;
     }
   }
 `;
 
-const TableContainer = styled.div`
-  background: var(--card-color);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+const DateLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.65rem;
+  color: #666;
 `;
 
-const TableHeader = styled.div`
+const Container = styled.div`
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 12px;
+  overflow: hidden;
+`;
+
+const THeader = styled.div`
   display: grid;
-  grid-template-columns: 100px 1.5fr 1fr 1fr 100px;
-  padding: 1rem 1.5rem;
-  background: var(--bg-darker);
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-dark);
-  font-size: 0.65rem;
-  font-weight: 900;
+  grid-template-columns: 1fr 1fr 100px; /* Mobile */
+  padding: 1rem;
+  background: #111;
+  font-size: 0.6rem;
+  color: #444;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  font-weight: 800;
+
+  .hide-mobile {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    grid-template-columns: 120px 1fr 1fr 120px;
+    .hide-mobile {
+      display: block;
+    }
+  }
 `;
 
 const Row = styled(motion.div)`
   display: grid;
-  grid-template-columns: 100px 1.5fr 1fr 1fr 100px;
-  padding: 1.2rem 1.5rem;
-  border-bottom: 1px solid var(--border-color);
+  grid-template-columns: 1fr 1.5fr 100px; /* Mobile */
+  padding: 1rem;
+  border-bottom: 1px solid #161616;
   align-items: center;
-  transition: 0.2s;
 
-  &:hover {
-    background: var(--bg-darker);
-  }
-
-  .time {
-    font-family: "Syncopate", sans-serif;
-    font-size: 0.75rem;
-    color: var(--primary-color);
-  }
-
-  .customer {
+  .time-col {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 600;
-    font-size: 0.9rem;
+    flex-direction: column;
+    .time {
+      color: #ffcc00;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .date-info {
+      font-size: 0.7rem;
+      color: #666;
+    }
   }
 
-  .service-badge {
-    background: var(--bg-color);
-    padding: 4px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    width: fit-content;
-  }
-
-  .barber {
+  .client-col {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.8rem;
-    color: var(--gold-color);
+    flex-direction: column;
+    gap: 4px;
+    .client {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9rem;
+    }
+    .service-name {
+      font-size: 0.75rem;
+      color: #888;
+    }
+  }
+
+  .hide-mobile {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    grid-template-columns: 120px 1fr 1fr 120px;
+    padding: 1.2rem 1.5rem;
+    .hide-mobile {
+      display: block;
+    }
+    .service-name {
+      display: none;
+    } /* No desktop mostramos na coluna própria */
   }
 `;
 
-const ActionGroup = styled.div`
+const Badge = styled.span<{ $status?: string }>`
+  font-size: 0.6rem;
+  background: #1a1a1a;
+  padding: 4px 10px;
+  border-radius: 20px;
+  color: #888;
+  border: 1px solid #333;
+`;
+
+const Actions = styled.div`
   display: flex;
   gap: 8px;
+  justify-content: flex-end;
 `;
 
-const IconButton = styled.button<{ $variant: "success" | "error" }>`
-  background: ${(props) =>
-    props.$variant === "success"
-      ? "rgba(34, 197, 94, 0.1)"
-      : "rgba(255, 0, 0, 0.1)"};
-  color: ${(props) =>
-    props.$variant === "success"
-      ? "var(--success-color)"
-      : "var(--error-color)"};
-  border: 1px solid
-    ${(props) =>
-      props.$variant === "success"
-        ? "var(--success-color)"
-        : "var(--error-color)"};
-  width: 36px;
-  height: 36px;
+const Btn = styled.button<{ $color: string }>`
+  background: #111;
+  border: 1px solid #222;
+  color: #555;
+  padding: 10px; /* Maior para facilitar o toque no celular */
   border-radius: 8px;
   cursor: pointer;
-  transition: 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 
-  &:hover {
-    background: ${(props) =>
-      props.$variant === "success"
-        ? "var(--success-color)"
-        : "var(--error-color)"};
-    color: white;
-    box-shadow: 0 0 15px
-      ${(props) =>
-        props.$variant === "success"
-          ? "var(--success-color)"
-          : "var(--error-color)"};
+  &:hover:not(:disabled) {
+    background: ${(p) => p.$color};
+    color: #fff;
   }
 `;
-const LoadingWrapper = styled.div`
-  display: flex;
-  justify-content: center;
-  padding: 4rem;
-  color: var(--primary-color);
-`;
 
-const EmptyState = styled.div`
-  padding: 4rem;
+const StatusBox = styled.div`
+  padding: 3rem 1rem;
   text-align: center;
-  color: var(--text-dark);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 10px;
 `;
-
-interface IAppointment {
-  id: number;
-  customerName: string;
-  time: string;
-  service: string;
-  barberName: string;
-  client_id: string;
-}
-
-export const AgendaDoDia: React.FC = () => {
-  const [appointments, setAppointments] = useState<IAppointment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-
-  const fetchAgenda = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get("/barber/agenda-hoje");
-      setAppointments(response.data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAgenda();
-  }, []);
-
-  const handleFinish = async (appId: number, clientId: string) => {
-    try {
-      await api.patch(`/agendamentos/${appId}/finalizar`, { clientId });
-      setAppointments((prev) => prev.filter((app) => app.id !== appId));
-    } catch (error) {}
-  };
-
-  const handleCancel = async (appId: number) => {
-    try {
-      await api.delete(`/barber/agendamentos/${appId}`);
-      setAppointments((prev) => prev.filter((app) => app.id !== appId));
-    } catch (error) {}
-  };
-
-  return (
-    <Layout>
-      
-      <MainContent>
-        <ContentWrapper>
-          <HeaderSection>
-            <div className="title">
-              
-              <h2>Agenda de Hoje</h2>
-            </div>
-            <div
-              style={{
-                textAlign: "right",
-                color: "var(--text-dark)",
-                fontSize: "0.7rem",
-              }}
-            >
-              <CalendarIcon size={12} style={{ marginRight: 5 }} />
-              {new Date()
-                .toLocaleDateString("pt-BR", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                })
-                .toUpperCase()}
-            </div>
-          </HeaderSection>
-
-          <TableContainer>
-            <TableHeader>
-              <div>Horário</div>
-              <div>Cliente</div>
-              <div>Serviço</div>
-              <div>Barbeiro</div>
-              <div>Ações</div>
-            </TableHeader>
-
-            <AnimatePresence mode="popLayout">
-              {loading ? (
-                <LoadingWrapper>
-                  <Loader2 className="animate-spin" size={32} />
-                </LoadingWrapper>
-              ) : appointments.length === 0 ? (
-                <EmptyState>
-                  <Clock size={40} />
-                  <p>Nenhum agendamento pendente para hoje.</p>
-                </EmptyState>
-              ) : (
-                appointments.map((app, index) => (
-                  <Row
-                    key={app.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, x: 20 }}
-                  >
-                    <div className="time">{app.time}</div>
-                    <div className="customer">
-                      <User size={14} color="var(--primary-color)" />
-                      {app.customerName}
-                    </div>
-                    <div>
-                      <span className="service-badge">{app.service}</span>
-                    </div>
-                    <div className="barber">
-                      <Scissors size={14} />
-                      {app.barberName}
-                    </div>
-
-                    <ActionGroup>
-                      {/* Botão Cancelar */}
-                      <IconButton
-                        $variant="error"
-                        title="Cancelar Agendamento"
-                        onClick={() => handleCancel(app.id)}
-                      >
-                        <Trash2 size={18} />
-                      </IconButton>
-
-                      {/* Botão Finalizar */}
-                      <IconButton
-                        $variant="success"
-                        title="Concluir Atendimento"
-                        onClick={() => handleFinish(app.id, app.client_id)}
-                      >
-                        <CheckCircle size={18} />
-                      </IconButton>
-                    </ActionGroup>
-                  </Row>
-                ))
-              )}
-            </AnimatePresence>
-          </TableContainer>
-        </ContentWrapper>
-      </MainContent>
-    </Layout>
-  );
-};

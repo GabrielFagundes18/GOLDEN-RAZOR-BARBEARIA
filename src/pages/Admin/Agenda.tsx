@@ -59,7 +59,6 @@ const StatusBadge = styled.span<{ status?: string }>`
       : "rgba(212, 175, 55, 0.1)"};
   color: ${(props) => (props.status === "concluido" ? "#2ecc71" : "#d4af37")};
 `;
-
 export const AgendaDono = () => {
   const [agendamentos, setAgendamentos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,8 +66,7 @@ export const AgendaDono = () => {
   const loadAgenda = useCallback(async () => {
     try {
       setLoading(true);
-      // Rota que você já tem no backend
-      const { data } = await api.get("/barber/agenda-hoje");
+      const { data } = await api.get("/schedules/daily");
       setAgendamentos(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Erro ao carregar agenda:", error);
@@ -120,7 +118,7 @@ export const AgendaDono = () => {
                     >
                       <User size={16} color="#d4af37" />
                       <strong style={{ color: "#fff" }}>
-                        {ag.cliente_nome || ag.nome_cliente || "Cliente"}
+                        {ag.customerName || "Cliente"}
                       </strong>
                       <StatusBadge status={ag.status}>{ag.status}</StatusBadge>
                     </div>
@@ -134,7 +132,7 @@ export const AgendaDono = () => {
                       }}
                     >
                       <Scissors size={14} />
-                      {ag.servico_nome || "Serviço não especificado"}
+                      {ag.service || "Serviço não especificado"}
                     </div>
                   </div>
 
@@ -149,7 +147,7 @@ export const AgendaDono = () => {
                         justifyContent: "flex-end",
                       }}
                     >
-                      <Clock size={14} /> {ag.hora || ag.horario}
+                      <Clock size={14} /> {ag.time || "Horário não definido"}
                     </div>
                     <div
                       style={{
@@ -160,7 +158,7 @@ export const AgendaDono = () => {
                     >
                       Barbeiro:{" "}
                       <span style={{ color: "#888" }}>
-                        {ag.barbeiro_nome || "Não definido"}
+                        {ag.barberName || "Não definido"}
                       </span>
                     </div>
                   </div>

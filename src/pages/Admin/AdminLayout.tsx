@@ -31,10 +31,7 @@ const Main = styled.main`
 export const AdminLayout = () => {
   return (
     <Layout>
-      {/* Sidebar fixa do admin */}
       <Sidebar />
-
-      {/* Aqui entram TODAS as rotas filhas */}
       <Main>
         <Outlet />
       </Main>

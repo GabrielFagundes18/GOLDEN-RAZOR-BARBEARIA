@@ -143,7 +143,7 @@ export const ProdutosDono = () => {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const { data } = await api.get("/ProdutoDono");
+      const { data } = await api.get("/admin/produtos");
       setProdutos(data || []);
     } catch (e) {
       console.error(e);
@@ -186,26 +186,26 @@ export const ProdutosDono = () => {
   }, [produtos, searchTerm, filterMode]);
 
   const handleSaveNew = async (data: any) => {
-    await api.post("/ProdutoDono", data);
+    await api.post("/admin/produtos", data);
     setActiveModal(null);
     loadData();
   };
 
   const handleRepor = async (data: any) => {
-    await api.post(`/ProdutoDono/reposicao/${data.produto_id}`, data);
+    await api.post(`/admin/produtos/${data.produto_id}/repor`, data);
     setActiveModal(null);
     loadData();
   };
 
   const handleUpdate = async (id: number, data: any) => {
-    await api.put(`/ProdutoDono/${id}`, data);
+    await api.put(`/admin/produtos/${id}`, data);
     setActiveModal(null);
     loadData();
   };
 
   const handleDelete = async (id: number) => {
     if (window.confirm("Excluir produto?")) {
-      await api.delete(`/ProdutoDono/${id}`);
+      await api.delete(`/admin/produtos/${id}`);
       setActiveModal(null);
       loadData();
     }

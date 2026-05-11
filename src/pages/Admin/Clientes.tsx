@@ -183,7 +183,7 @@ export const ClientesDono = () => {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const { data } = await api.get("/loja/clientes");
+      const { data } = await api.get("/profiles");
       setClientes(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Erro no Neon:", error);

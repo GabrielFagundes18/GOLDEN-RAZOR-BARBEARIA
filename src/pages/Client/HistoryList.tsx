@@ -131,8 +131,8 @@ const StatusBadge = styled.div<{ $status: string }>`
 export default function HistoryList() {
   const { user } = useUser();
   const { data: history, loading } = useFetch<any[]>(
-    user?.id ? `/agendamentos/historico?clerk_id=${user.id}` : null,
-  );
+  user?.id ? `/history?clerk_id=${user.id}` : null,
+);
 
   if (loading)
     return (
@@ -168,7 +168,7 @@ export default function HistoryList() {
           className="sync"
           style={{ fontSize: "0.6rem", color: "var(--text-dark)", margin: 0 }}
         >
-          NENHUMA MISSÃO NO ARQUIVO.
+          NENHUMA HISTÓRICO DISPONÍVEL.
         </p>
       </div>
     );

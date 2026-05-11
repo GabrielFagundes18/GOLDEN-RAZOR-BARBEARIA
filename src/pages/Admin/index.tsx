@@ -5,7 +5,6 @@ import {
   TrendingUp,
   Search,
   ChevronRight,
-  AlertCircle,
   Target,
   Zap,
 } from "lucide-react";
@@ -184,7 +183,7 @@ export const DashboardDono = () => {
   /* ---------- LOAD ---------- */
   const loadAnalytics = useCallback(async () => {
     try {
-      const res = await api.get("/barbeirosAdmin", { params: dates });
+      const res = await api.get("/admin/barbeiros", { params: dates });
       setData(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error(err);

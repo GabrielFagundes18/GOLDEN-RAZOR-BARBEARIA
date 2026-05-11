@@ -20,7 +20,6 @@ const MainContent = styled.main`
   flex: 1;
   padding: 2.5rem;
   overflow-y: auto;
-  
 `;
 
 const HeaderRow = styled.div`
@@ -160,7 +159,6 @@ export const Financeiro = () => {
   const [stats, setStats] = useState({ faturamento: 0, saidas: 0, lucro: 0 });
   const [transacoes, setTransacoes] = useState<any[]>([]);
 
-  // Filtro de data: Início do mês atual até hoje
   const [dateStart, setDateStart] = useState(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1)
       .toISOString()
@@ -176,8 +174,8 @@ export const Financeiro = () => {
       const params = { start: dateStart, end: dateEnd };
 
       const [resumoRes, transacoesRes] = await Promise.all([
-        api.get("/financeiro/resumo", { params }),
-        api.get("/financeiro/transacoes", { params }),
+        api.get("/admin/financeiro/resumo", { params }),
+        api.get("/admin/financeiro/transacoes", { params }),
       ]);
 
       setStats(resumoRes.data);
@@ -191,7 +189,7 @@ export const Financeiro = () => {
 
   useEffect(() => {
     loadData();
-  }, []); // Carrega ao montar a página
+  }, []); 
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("pt-BR", {
@@ -279,16 +277,16 @@ export const Financeiro = () => {
                       <tr key={t.id}>
                         <td>
                           <div style={{ fontWeight: 600 }}>
-                            {t.cliente_nome }
+                            {t.usuario_id}
                           </div>
                         </td>
                         <td style={{ color: "#666" }}>
                           {new Date(t.data).toLocaleDateString("pt-BR")}
                         </td>
-                        <td>{t.servico_nome}</td>
+                        <td>{t.servico}</td>
                         <td>
                           <span className="barber-badge">
-                            {t.barbeiro_nome}
+                            {t.barbeiro}
                           </span>
                         </td>
                         <td style={{ textAlign: "right" }} className="value-in">

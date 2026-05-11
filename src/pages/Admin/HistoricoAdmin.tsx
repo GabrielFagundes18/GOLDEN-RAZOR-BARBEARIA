@@ -20,7 +20,7 @@ export const HistoricoAdmin = () => {
   const fetchHistorico = async () => {
     try {
       setLoading(true);
-      const { data } = await api.get("/vendas/historico");
+      const { data } = await api.get("/sales/history");
       setVendas(data);
     } catch (err) {
       console.error("Erro ao carregar histórico:", err);
@@ -55,7 +55,7 @@ export const HistoricoAdmin = () => {
               <h1>
                 Histórico de <strong>Operações</strong>
               </h1>
-              <p>Relatório detalhado de saída do arsenal</p>
+              <p>Relatório detalhado de saída de Produtos</p>
             </div>
           </div>
 

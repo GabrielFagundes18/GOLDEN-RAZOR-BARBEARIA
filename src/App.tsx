@@ -34,7 +34,7 @@ import Overview from "./pages/Client/Overview";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminLayout } from "./pages/Admin/AdminLayout";
 import  BarberLayout  from "./pages/barber/BarberLayout";
-
+import { Toaster } from 'react-hot-toast';
 export default function App() {
   const { user} = useUser();
 
@@ -42,7 +42,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <GlobalStyles />
-
+<Toaster position="top-right" />
       <Routes>
         {/* PUBLIC */}
         <Route path="/" element={<GoldenRazor />} />
@@ -91,9 +91,9 @@ export default function App() {
           <Route path="novo" element={<NovoAgendamento />} />
           <Route path="vendas" element={<Vendas />} />
           <Route path="clientes" element={<Clientes />} />
-          <Route path="historico" element={<HistoricoVendas />} />
-          <Route path="HistoricoVendas" element={<HistoricoGlobal />} />
-          <Route path="clientes/:id" element={< DetalhesCliente/>} />
+          <Route path="historico" element={<HistoricoGlobal />} />
+          <Route path="HistoricoVendas" element={<HistoricoVendas />} />
+          <Route path="clientes/:id/detalhes" element={<DetalhesCliente />} />
 
         </Route>
         {/* ADMIN */}

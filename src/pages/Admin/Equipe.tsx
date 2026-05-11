@@ -122,7 +122,7 @@ export const Equipe = () => {
     try {
       setLoading(true);
       // Chama a rota que agora não tem mais o filtro WHERE ativo = true
-      const { data } = await api.get("/barbeirosAdmin", {
+      const { data } = await api.get("/admin/barbeiros", {
         params: { start, end },
       });
       setBarbeiros(data);
@@ -139,7 +139,7 @@ export const Equipe = () => {
 
   const handleToggleStatus = async (id: number) => {
     try {
-      const res = await api.patch(`/barbeirosAdmin/${id}/status`);
+      const res = await api.patch(`/admin/barbeiros/${id}/status`);
 
       // Atualiza o estado LOCAL. Isso garante que o card continue na lista.
       setBarbeiros((prev) =>
@@ -154,7 +154,7 @@ export const Equipe = () => {
     if (!window.confirm("Deseja remover este profissional permanentemente?"))
       return;
     try {
-      await api.delete(`/barbeirosAdmin/${id}`);
+      await api.delete(`/admin/barbeiros/${id}`);
       loadData();
     } catch (err) {
       alert("Erro ao deletar.");
@@ -164,7 +164,7 @@ export const Equipe = () => {
   const handleSave = async () => {
     if (!form.name) return;
     try {
-      await api.post("/barbeirosAdmin", {
+      await api.post("/admin/barbeiros", {
         name: form.name,
         especialidade: form.especialidade,
         comissao_percentual: form.comissao,

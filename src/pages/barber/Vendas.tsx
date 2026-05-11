@@ -84,7 +84,7 @@ export const Vendas = () => {
   };
 
   const confirmarVendaLote = async (cliente: string) => {
-    await api.post("/vendas/lote", {
+    await api.post("/sales", {
       cliente_nome: cliente,
       itens: carrinho.map((i) => ({
         produto_id: i.id,

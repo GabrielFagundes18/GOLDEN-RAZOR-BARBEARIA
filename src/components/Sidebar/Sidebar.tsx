@@ -16,6 +16,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { useClerk, useUser } from "@clerk/clerk-react";
+import { RoleSwitcher } from "../RoleSwitcher/RoleSwitcher";
 
 const SidebarContainer = styled.aside<{ $isOpen: boolean }>`
   width: ${(props) => (props.$isOpen ? "280px" : "80px")};
@@ -223,8 +224,9 @@ export const Sidebar = memo(() => {
               }}
             />
           </button>
+          
         </LogoWrapper>
-
+<RoleSwitcher $isOpen={isOpen} />
         <nav
           style={{
             flex: 1,

@@ -4,8 +4,9 @@ import { motion } from "framer-motion";
 import { useUser } from "@clerk/clerk-react";
 import { useFetch } from "../../hooks/useFetch";
 import { Calendar, User, Clock, Scissors, Hash } from "lucide-react";
-import { format, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { format } from "date-fns/format";
+import { parseISO } from "date-fns/parseISO";
+import { ptBR } from "date-fns/locale/pt-BR";
 
 interface Appointment {
   id: number;
@@ -175,7 +176,7 @@ export default function AppointmentList() {
     loading,
     error,
   } = useFetch<Appointment[]>(
-    user?.id ? `/agendamentos/cliente?clerk_id=${user.id}` : null,
+    user?.id ? `/history/${user.id}` : null,
   );
 
   const activeAppointments = appointments?.filter(

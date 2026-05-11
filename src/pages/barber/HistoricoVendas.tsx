@@ -142,7 +142,7 @@ export const HistoricoVendas = () => {
 
   useEffect(() => {
     api
-      .get("/vendas/historico")
+      .get("/sales/history")
       .then((res) => {
         setVendas(res.data);
         setLoading(false);
