@@ -28,7 +28,7 @@ export const RoleSwitcher = ({ $isOpen }: { $isOpen: boolean }) => {
     if (!user || !isLoaded || loadingRole) return;
     setLoadingRole(nextRole);
     try {
-      await axios.post("http://localhost:3333/update-role", {
+      await axios.post("/update-role", {
         userId: user.id,
         newRole: nextRole,
       });
