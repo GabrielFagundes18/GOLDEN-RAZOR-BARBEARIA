@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useUser } from "@clerk/clerk-react";
-import axios from "axios";
+import {api} from "../../services/api";
 import { User, Scissors, ShieldCheck, Loader2 } from "lucide-react";
 import styled from "styled-components";
 
@@ -28,7 +28,7 @@ export const RoleSwitcher = ({ $isOpen }: { $isOpen: boolean }) => {
     if (!user || !isLoaded || loadingRole) return;
     setLoadingRole(nextRole);
     try {
-      await axios.post("/update-role", {
+      await api.post("/update-role", {
         userId: user.id,
         newRole: nextRole,
       });
