@@ -31,7 +31,6 @@ const Container = styled.div`
   }
 `;
 
-// Container para agrupar Data e Hora lado a lado no Desktop, empilhado no Mobile
 const DateTimeWrapper = styled.div`
   display: grid;
   grid-template-columns: 1.2fr 1fr;
@@ -173,10 +172,12 @@ const FinalizeBtn = styled.button`
 
 // --- COMPONENTE ---
 
+// ... (mantenha os estilos anteriores)
+
 export default function ClienteBooking({ clerkId, userName, onSuccess }: any) {
   const [loading, setLoading] = useState(false);
   const [dbData, setDbData] = useState({ services: [], barbers: [] });
-  const [occupied, setOccupied] = useState<string[]>([]);
+  const [occupied, setOccupied] = useState<string[]>([]); // Horários vindos do banco
   const [form, setForm] = useState({
     service: null as any,
     barber: null as any,
@@ -184,19 +185,27 @@ export default function ClienteBooking({ clerkId, userName, onSuccess }: any) {
     time: "",
   });
 
+  // 1. Carrega Serviços e Barbeiros
   useEffect(() => {
     async function load() {
-      const [s, b] = await Promise.all([
-        api.get("/services"),
-        api.get("/barbers"),
-      ]);
-      setDbData({ services: s.data, barbers: b.data });
+      try {
+        const [s, b] = await Promise.all([
+          api.get("/services"),
+          api.get("/barbers"),
+        ]);
+        setDbData({ services: s.data, barbers: b.data });
+      } catch (err) {
+        toast.error("Erro ao carregar dados do arsenal.");
+      }
     }
     load();
   }, []);
 
+  // 2. VERIFICAÇÃO DE AGENDA DO BARBEIRO
+  // Sempre que mudar o barbeiro ou a data, consultamos o banco
   useEffect(() => {
     if (form.barber?.id) {
+      setOccupied([]); // Limpa enquanto carrega
       api
         .get(`/bookings/occupied`, {
           params: {
@@ -204,17 +213,39 @@ export default function ClienteBooking({ clerkId, userName, onSuccess }: any) {
             barbeiro_id: form.barber.id,
           },
         })
-        .then((res) => setOccupied(res.data));
+        .then((res) => {
+          // O backend deve retornar um array de strings: ["08:00", "10:40"]
+          setOccupied(res.data);
+        })
+        .catch(() => toast.error("Falha ao sincronizar agenda."));
     }
   }, [form.date, form.barber]);
 
-  const handleFinish = async () => {
-    if (!form.service || !form.barber || !form.time) return;
+  // 3. Lógica para desabilitar horários passados (se for hoje)
+  const isTimePast = (time: string) => {
+    const isToday = isSameDay(form.date, new Date());
+    if (!isToday) return false;
+
+    const [hours, minutes] = time.split(":").map(Number);
+    const now = new Date();
+    const scheduleTime = new Date();
+    scheduleTime.setHours(hours, minutes, 0);
+
+    return scheduleTime <= now;
+  };
+
+ const handleFinish = async () => {
+    if (!form.service || !form.barber || !form.time) {
+      return toast.error("Selecione todos os campos.");
+    }
+    
     setLoading(true);
     try {
       const [h, m] = form.time.split(":");
       const finalDate = new Date(form.date);
-      finalDate.setHours(Number(h), Number(m));
+      finalDate.setHours(Number(h), Number(m), 0);
+
+      // 1. Envia para a API
       await api.post("/bookings", {
         cliente: userName,
         usuario_id: clerkId,
@@ -222,23 +253,38 @@ export default function ClienteBooking({ clerkId, userName, onSuccess }: any) {
         barbeiro_id: form.barber.id,
         data: format(finalDate, "yyyy-MM-dd HH:mm:ss"),
       });
-      toast.success("Agendamento realizado!");
+
+      // 2. Notifica o sucesso
+      toast.success("Missão agendada com sucesso!");
+
+      // 3. Executa o callback de sucesso (se existir)
       if (onSuccess) onSuccess();
-    } catch (err) {
-      toast.error("Erro ao agendar.");
+
+      // 4. RECARREGA A PÁGINA (Dá um pequeno delay para o usuário ver o Toast)
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+
+    } catch (err: any) {
+      const msg = err.response?.data?.error || "Erro ao agendar.";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
+  const availableSlots = [
+    "08:00", "08:40", "09:20", "10:00", "10:40", "11:20",
+    "13:00", "13:40", "14:20", "15:00", "15:40", "16:20",
+    "17:00", "17:40", "18:20", "19:00"
+  ];
+
   return (
     <Container>
-      {/* SERVIÇOS E BARBEIROS EM UM GRID QUE SE AJUSTA */}
       <DateTimeWrapper>
+       
         <SectionCard>
-          <Title>
-            <Scissors size={14} /> Serviço
-          </Title>
+          <Title><Scissors size={14} /> Serviço</Title>
           <ChoiceGrid>
             {dbData.services.map((s: any) => (
               <ChoiceBtn
@@ -252,16 +298,15 @@ export default function ClienteBooking({ clerkId, userName, onSuccess }: any) {
           </ChoiceGrid>
         </SectionCard>
 
+        {/* Barbeiro */}
         <SectionCard>
-          <Title>
-            <User size={14} /> Barbeiro
-          </Title>
+          <Title><User size={14} /> Barbeiro</Title>
           <ChoiceGrid>
             {dbData.barbers.map((b: any) => (
               <ChoiceBtn
                 key={b.id}
                 active={form.barber?.id === b.id}
-                onClick={() => setForm({ ...form, barber: b })}
+                onClick={() => setForm({ ...form, barber: b, time: "" })} // Limpa o time ao trocar barbeiro
               >
                 {b.name}
               </ChoiceBtn>
@@ -271,18 +316,13 @@ export default function ClienteBooking({ clerkId, userName, onSuccess }: any) {
       </DateTimeWrapper>
 
       <DateTimeWrapper>
+        {/* Escolha do Dia */}
         <SectionCard>
-          <Title>
-            <CalIcon size={14} /> Escolha o Dia
-          </Title>
-          <ChoiceGrid
-            style={{
-              gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
-            }}
-          >
-            {Array.from({ length: 6 }).map((_, i) => {
+          <Title><CalIcon size={14} /> Escolha o Dia</Title>
+          <ChoiceGrid style={{ gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))" }}>
+            {Array.from({ length: 14 }).map((_, i) => { // Aumentado para 14 dias
               const d = addDays(new Date(), i);
-              if (d.getDay() === 0) return null;
+              if (d.getDay() === 0) return null; // Pula domingos
               return (
                 <ChoiceBtn
                   key={i}
@@ -297,62 +337,54 @@ export default function ClienteBooking({ clerkId, userName, onSuccess }: any) {
           </ChoiceGrid>
         </SectionCard>
 
+        {/* Horários Dinâmicos */}
         <SectionCard>
-          <Title>
-            <Clock size={14} /> Horário
-          </Title>
-          <ScrollableGrid>
-            {[
-              "08:00",
-              "08:40",
-              "09:20",
-              "10:00",
-              "10:40",
-              "11:20",
-              "13:00",
-              "13:40",
-              "14:20",
-              "15:00",
-              "15:40",
-              "16:20",
-              "17:00",
-              "17:40",
-              "18:20",
-              "19:00",
-            ].map((t) => (
-              <ChoiceBtn
-                key={t}
-                active={form.time === t}
-                disabled={occupied.includes(t)}
-                onClick={() => setForm({ ...form, time: t })}
-              >
-                {t}
-              </ChoiceBtn>
-            ))}
-          </ScrollableGrid>
+          <Title><Clock size={14} /> Horário</Title>
+          {!form.barber ? (
+            <p style={{ fontSize: '0.8rem', opacity: 0.5, textAlign: 'center' }}>
+              Selecione um barbeiro primeiro.
+            </p>
+          ) : (
+            <ScrollableGrid>
+              {availableSlots.map((t) => {
+                const isOccupied = occupied.includes(t);
+                const isPast = isTimePast(t);
+                const isDisabled = isOccupied || isPast;
+
+                return (
+                  <ChoiceBtn
+                    key={t}
+                    active={form.time === t}
+                    disabled={isDisabled}
+                    onClick={() => !isDisabled && setForm({ ...form, time: t })}
+                  >
+                    {t}
+                    {isOccupied && <small style={{ color: '#ff4444' }}>Ocupado</small>}
+                    {isPast && !isOccupied && <small>Indisponível</small>}
+                  </ChoiceBtn>
+                );
+              })}
+            </ScrollableGrid>
+          )}
         </SectionCard>
       </DateTimeWrapper>
 
-      {/* RESUMO COMPACTO NA HORIZONTAL NO DESKTOP */}
+      {/* Resumo e Finalização */}
       <SummaryBox>
         <div className="details">
+          <div className="item">Serviço: <strong>{form.service?.name || "--"}</strong></div>
+          <div className="item">Barbeiro: <strong>{form.barber?.name || "--"}</strong></div>
           <div className="item">
-            Serviço: <strong>{form.service?.name || "--"}</strong>
-          </div>
-          <div className="item">
-            Barbeiro: <strong>{form.barber?.name || "--"}</strong>
-          </div>
-          <div className="item">
-            Data:{" "}
-            <strong>
-              {form.time
-                ? `${format(form.date, "dd/MM")} às ${form.time}`
-                : "--"}
+            Data: <strong>
+              {form.time ? `${format(form.date, "dd/MM")} às ${form.time}` : "--"}
             </strong>
           </div>
         </div>
-        <FinalizeBtn disabled={loading || !form.time} onClick={handleFinish}>
-          {loading ? <Loader2 className="animate-spin" /> : "Confirmar"}
+        <FinalizeBtn 
+          disabled={loading || !form.time || !form.barber || !form.service} 
+          onClick={handleFinish}
+        >
+          {loading ? <Loader2 className="animate-spin" /> : "Confirmar Missão"}
         </FinalizeBtn>
       </SummaryBox>
     </Container>

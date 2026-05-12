@@ -245,10 +245,9 @@ export default function ProductHeroCarousel({ products }: { products: any[] }) {
   const [index, setIndex] = useState(0);
   const navigate = useNavigate();
 
-  const featured = useMemo(
-    () => products?.filter((p) => p.em_estoque).slice(0, 6) || [],
-    [products],
-  );
+  const featured = products.filter(p => 
+  p.em_estoque === true || Number(p.estoque_qtd) > 0
+).slice(0, 6);
 
   const handleNext = () =>
     setIndex((prev) => (prev === featured.length - 1 ? 0 : prev + 1));
@@ -313,7 +312,7 @@ export default function ProductHeroCarousel({ products }: { products: any[] }) {
               <ActionBtn
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate(`/produtos/${current.id}`)}
+                onClick={() => navigate(`/client/produtos/${current.id}`)}
               >
                 <FaShoppingCart /> ADQUIRIR AGORA
               </ActionBtn>

@@ -7,7 +7,6 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  Scissors,
   Calendar,
   Shield,
 } from "lucide-react";
