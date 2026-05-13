@@ -12,7 +12,6 @@ import ProductsPage from "./pages/Client/ProductsPage";
 import ProductDetails from "./pages/Client/ProductDetails";
 import HistoryPage from "./pages/Client/HistoryList";
 import BookingForm from "./pages/Client/BookingForm";
-import ProfileView from "./pages/Client/ProfileView";
 import { DashboardDono } from "./pages/Admin";
 
 // --- NOVOS IMPORTS DO DASHBOARD DO BARBEIRO ---
@@ -73,7 +72,6 @@ export default function App() {
 
           <Route path="produtos" element={<ProductsPage />} />
           <Route path="produtos/:id" element={<ProductDetails />} />
-          <Route path="perfil" element={<ProfileView />} />
           <Route path="historico" element={<HistoryPage />} />
         </Route>
 

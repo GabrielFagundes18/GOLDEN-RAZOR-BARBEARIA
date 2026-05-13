@@ -1,211 +1,193 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Scissors,
   User,
   Clock,
   Calendar as CalIcon,
   Loader2,
+  Search,
+  ChevronLeft,
   Sparkles,
+  CheckCircle2,
 } from "lucide-react";
-import { format, addDays, isSameDay } from "date-fns";
+import {
+  format,
+  addDays,
+  isSameDay,
+  isAfter,
+  startOfDay,
+  parse,
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { api } from "../../services/api";
 import toast from "react-hot-toast";
 
-// --- ESTILOS RESPONSIVOS ---
+// --- STYLED COMPONENTS (AESTHETIC: TACTICAL DARK) ---
 
 const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  background: transparent;
-  color: var(--text-color);
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 1rem;
-  gap: 1rem;
-
-  @media (max-width: 768px) {
-    padding: 0.5rem;
-  }
+  color: #fff;
 `;
 
-const DateTimeWrapper = styled.div`
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 1.5rem;
-
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-`;
-
-const SectionCard = styled.div`
-  background: var(--card-color);
+const GlassCard = styled(motion.div)`
+  background: rgba(10, 10, 10, 0.95);
   border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 1.2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
 `;
-
-const Title = styled.h3`
-  font-family: "Rajdhani", sans-serif;
-  font-size: 0.85rem;
-  letter-spacing: 1.5px;
-  color: var(--primary-color);
-  text-transform: uppercase;
-  margin-bottom: 1rem;
+const Title = styled.h2`
   display: flex;
   align-items: center;
-  gap: 8px;
-  text-shadow: 0 0 10px var(--primary-glow);
+  gap: 12px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 `;
 
-const ChoiceGrid = styled.div`
+const StepBadge = styled.div`
+  background: var(--primary-color);
+  color: #000;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  width: fit-content;
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+`;
+
+const MainGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 8px;
-
-  /* No mobile, os botões de horário e data podem ser menores */
-  @media (max-width: 480px) {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  }
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
 `;
 
-// Scroll customizado para a lista de horários não esticar a tela
-const ScrollableGrid = styled(ChoiceGrid)`
-  max-height: 220px;
-  overflow-y: auto;
-  padding-right: 5px;
-
-  &::-webkit-scrollbar {
-    width: 4px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 10px;
-  }
-`;
-
-const ChoiceBtn = styled.button<{ active: boolean; disabled?: boolean }>`
+const ItemCard = styled.button<{ active?: boolean; disabled?: boolean }>`
   background: ${(props) =>
     props.active ? "var(--primary-color)" : "rgba(255,255,255,0.03)"};
   border: 1px solid
     ${(props) =>
       props.active ? "var(--primary-color)" : "var(--border-color)"};
-  color: ${(props) => (props.active ? "#000" : "var(--text-color)")};
-  padding: 10px;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 0.85rem;
-  cursor: pointer;
+  color: ${(props) => (props.active ? "#000" : "#fff")};
+  padding: 1.2rem;
+  border-radius: 12px;
+  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
   transition: all 0.2s ease;
-  opacity: ${(props) => (props.disabled ? 0.2 : 1)};
+  text-align: left;
+  opacity: ${(props) => (props.disabled ? 0.3 : 1)};
 
   &:hover:not(:disabled) {
-    border-color: var(--gold-bright);
-    box-shadow: 0 0 10px var(--gold-glow);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
   }
 
-  small {
+  strong {
     display: block;
-    font-size: 0.7rem;
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+  span {
+    display: block;
+    font-size: 0.75rem;
     opacity: 0.7;
   }
 `;
 
-const SummaryBox = styled.div`
-  background: var(--bg-darker);
-  padding: 1.2rem;
-  border-radius: 16px;
-  border: 1px solid var(--primary-glow);
+const TimeGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 20px;
-
-  @media (max-width: 600px) {
-    grid-template-columns: 1fr;
-    gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 5px;
+  &::-webkit-scrollbar {
+    width: 4px;
   }
-
-  .details {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px;
-  }
-
-  .item {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    strong {
-      color: var(--gold-color);
-      display: block;
-      font-size: 0.9rem;
-    }
+  &::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 10px;
   }
 `;
 
-const FinalizeBtn = styled.button`
-  padding: 1rem 2rem;
+const Summary = styled.div`
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 15px;
+  border-left: 4px solid var(--primary-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  @media (max-width: 600px) {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+`;
+
+const FinalBtn = styled.button`
   background: var(--primary-color);
   color: #000;
+  padding: 1rem 2rem;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   font-weight: 900;
-  font-size: 0.9rem;
-  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   cursor: pointer;
-  white-space: nowrap;
-
-  &:hover:not(:disabled) {
-    background: var(--gold-bright);
-    box-shadow: 0 0 15px var(--primary-glow);
-  }
-
-  @media (max-width: 600px) {
-    width: 100%;
+  &:disabled {
+    opacity: 0.5;
   }
 `;
 
-// --- COMPONENTE ---
+// --- COMPONENTE PRINCIPAL ---
 
-// ... (mantenha os estilos anteriores)
-
-export default function ClienteBooking({ clerkId, userName, onSuccess }: any) {
+export default function BookingSystem({ clerkId, userName, onSuccess }: any) {
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [dbData, setDbData] = useState({ services: [], barbers: [] });
-  const [occupied, setOccupied] = useState<string[]>([]); // Horários vindos do banco
+  const [db, setDb] = useState({ services: [], barbers: [] });
+  const [occupied, setOccupied] = useState<any[]>([]); // Array de objetos {hora_inicio, duracao}
+  const [isReward, setIsReward] = useState(false); // Adicione isso no topo do componente
   const [form, setForm] = useState({
     service: null as any,
     barber: null as any,
-    date: new Date(),
+    date: startOfDay(new Date()),
     time: "",
   });
 
-  // 1. Carrega Serviços e Barbeiros
+  // 1. Carregar dados do banco
   useEffect(() => {
-    async function load() {
+    async function init() {
       try {
         const [s, b] = await Promise.all([
           api.get("/services"),
           api.get("/barbers"),
         ]);
-        setDbData({ services: s.data, barbers: b.data });
-      } catch (err) {
-        toast.error("Erro ao carregar dados do arsenal.");
+        setDb({ services: s.data, barbers: b.data });
+      } catch {
+        toast.error("Erro ao carregar base de dados.");
       }
     }
-    load();
+    init();
   }, []);
 
-  // 2. VERIFICAÇÃO DE AGENDA DO BARBEIRO
-  // Sempre que mudar o barbeiro ou a data, consultamos o banco
+  // 2. Buscar horários ocupados toda vez que mudar barbeiro ou data
   useEffect(() => {
     if (form.barber?.id) {
-      setOccupied([]); // Limpa enquanto carrega
       api
         .get(`/bookings/occupied`, {
           params: {
@@ -213,180 +195,384 @@ export default function ClienteBooking({ clerkId, userName, onSuccess }: any) {
             barbeiro_id: form.barber.id,
           },
         })
-        .then((res) => {
-          // O backend deve retornar um array de strings: ["08:00", "10:40"]
-          setOccupied(res.data);
-        })
-        .catch(() => toast.error("Falha ao sincronizar agenda."));
+        .then((res) => setOccupied(res.data || []));
     }
   }, [form.date, form.barber]);
 
-  // 3. Lógica para desabilitar horários passados (se for hoje)
-  const isTimePast = (time: string) => {
-    const isToday = isSameDay(form.date, new Date());
-    if (!isToday) return false;
+  // 3. Gerar slots de 20 em 20 minutos (08:00 - 20:00)
+  const timeSlots = useMemo(() => {
+    const slots = [];
+    for (let h = 8; h < 20; h++) {
+      for (let m = 0; m < 60; m += 40) {
+        slots.push(
+          `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`,
+        );
+      }
+    }
+    return slots;
+  }, []);
 
-    const [hours, minutes] = time.split(":").map(Number);
-    const now = new Date();
-    const scheduleTime = new Date();
-    scheduleTime.setHours(hours, minutes, 0);
+  // 4. LÓGICA DE COLISÃO (O CORAÇÃO DO SISTEMA)
+  const isTimeBlocked = (slot: string) => {
+    const [slotH, slotM] = slot.split(":").map(Number);
+    const slotStartTotal = slotH * 60 + slotM;
+    const myServiceDuration = parseInt(form.service?.duration || 30);
+    const slotEndTotal = slotStartTotal + myServiceDuration;
 
-    return scheduleTime <= now;
+    return occupied.some((occ) => {
+      const [occH, occM] = occ.hora_inicio.split(":").map(Number);
+      const occStart = occH * 60 + occM;
+      const occEnd = occStart + parseInt(occ.duracao);
+
+      // Bloqueia se:
+      // 1. O início do slot cai dentro de um agendamento existente
+      // 2. O fim do novo serviço invade o início de um agendamento existente
+      const overlap =
+        (slotStartTotal >= occStart && slotStartTotal < occEnd) ||
+        (slotEndTotal > occStart && slotStartTotal < occStart);
+      return overlap;
+    });
   };
 
- const handleFinish = async () => {
-    if (!form.service || !form.barber || !form.time) {
-      return toast.error("Selecione todos os campos.");
-    }
-    
+  const handleFinish = async () => {
     setLoading(true);
     try {
       const [h, m] = form.time.split(":");
       const finalDate = new Date(form.date);
       finalDate.setHours(Number(h), Number(m), 0);
 
-      // 1. Envia para a API
       await api.post("/bookings", {
         cliente: userName,
         usuario_id: clerkId,
         servico_id: form.service.id,
         barbeiro_id: form.barber.id,
         data: format(finalDate, "yyyy-MM-dd HH:mm:ss"),
+        valor: form.service.price,
       });
 
-      // 2. Notifica o sucesso
-      toast.success("Missão agendada com sucesso!");
-
-      // 3. Executa o callback de sucesso (se existir)
-      if (onSuccess) onSuccess();
-
-      // 4. RECARREGA A PÁGINA (Dá um pequeno delay para o usuário ver o Toast)
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-
+      toast.success("AGENDAMENTO REALIZADO!");
+      onSuccess?.();
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err: any) {
-      const msg = err.response?.data?.error || "Erro ao agendar.";
-      toast.error(msg);
+      toast.error(err.response?.data?.error || "Erro ao salvar.");
     } finally {
       setLoading(false);
     }
   };
 
-  const availableSlots = [
-    "08:00", "08:40", "09:20", "10:00", "10:40", "11:20",
-    "13:00", "13:40", "14:20", "15:00", "15:40", "16:20",
-    "17:00", "17:40", "18:20", "19:00"
-  ];
-
   return (
     <Container>
-      <DateTimeWrapper>
-       
-        <SectionCard>
-          <Title><Scissors size={14} /> Serviço</Title>
-          <ChoiceGrid>
-            {dbData.services.map((s: any) => (
-              <ChoiceBtn
-                key={s.id}
-                active={form.service?.id === s.id}
-                onClick={() => setForm({ ...form, service: s })}
-              >
-                {s.name} <small>R$ {Number(s.price).toFixed(2)}</small>
-              </ChoiceBtn>
-            ))}
-          </ChoiceGrid>
-        </SectionCard>
-
-        {/* Barbeiro */}
-        <SectionCard>
-          <Title><User size={14} /> Barbeiro</Title>
-          <ChoiceGrid>
-            {dbData.barbers.map((b: any) => (
-              <ChoiceBtn
-                key={b.id}
-                active={form.barber?.id === b.id}
-                onClick={() => setForm({ ...form, barber: b, time: "" })} // Limpa o time ao trocar barbeiro
-              >
-                {b.name}
-              </ChoiceBtn>
-            ))}
-          </ChoiceGrid>
-        </SectionCard>
-      </DateTimeWrapper>
-
-      <DateTimeWrapper>
-        {/* Escolha do Dia */}
-        <SectionCard>
-          <Title><CalIcon size={14} /> Escolha o Dia</Title>
-          <ChoiceGrid style={{ gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))" }}>
-            {Array.from({ length: 14 }).map((_, i) => { // Aumentado para 14 dias
-              const d = addDays(new Date(), i);
-              if (d.getDay() === 0) return null; // Pula domingos
-              return (
-                <ChoiceBtn
-                  key={i}
-                  active={isSameDay(d, form.date)}
-                  onClick={() => setForm({ ...form, date: d, time: "" })}
+      <AnimatePresence mode="wait">
+        {step === 1 && (
+          <GlassCard
+            key="step1"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+          >
+            <StepBadge>Fase 01</StepBadge>
+            <Header>
+              <Title>
+                <Scissors size={20} color="var(--primary-color)" /> O que vamos
+                fazer hoje?
+              </Title>
+            </Header>
+            <MainGrid>
+              {db.services.map((s: any) => (
+                <ItemCard
+                  key={s.id}
+                  active={form.service?.id === s.id}
+                  onClick={() => {
+                    setForm({ ...form, service: s });
+                    setStep(2);
+                  }}
                 >
-                  {format(d, "dd/MM")}
-                  <small>{format(d, "eee", { locale: ptBR })}</small>
-                </ChoiceBtn>
-              );
-            })}
-          </ChoiceGrid>
-        </SectionCard>
+                  <strong>{s.name}</strong>
+                  <span>
+                    {s.duration} min • R$ {s.price}
+                  </span>
+                </ItemCard>
+              ))}
+            </MainGrid>
+          </GlassCard>
+        )}
 
-        {/* Horários Dinâmicos */}
-        <SectionCard>
-          <Title><Clock size={14} /> Horário</Title>
-          {!form.barber ? (
-            <p style={{ fontSize: '0.8rem', opacity: 0.5, textAlign: 'center' }}>
-              Selecione um barbeiro primeiro.
-            </p>
-          ) : (
-            <ScrollableGrid>
-              {availableSlots.map((t) => {
-                const isOccupied = occupied.includes(t);
-                const isPast = isTimePast(t);
-                const isDisabled = isOccupied || isPast;
-
-                return (
-                  <ChoiceBtn
-                    key={t}
-                    active={form.time === t}
-                    disabled={isDisabled}
-                    onClick={() => !isDisabled && setForm({ ...form, time: t })}
+        {step === 2 && (
+          <GlassCard
+            key="step2"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+          >
+            <StepBadge>Fase 02</StepBadge>
+            <Header>
+              <Title>
+                <User size={20} color="var(--primary-color)" /> Com qual
+                profissional?
+              </Title>
+              <ChevronLeft
+                onClick={() => setStep(1)}
+                style={{ cursor: "pointer" }}
+              />
+            </Header>
+            <MainGrid>
+              {db.barbers
+                .filter((b: any) => b.ativo)
+                .map((b: any) => (
+                  <ItemCard
+                    key={b.id}
+                    active={form.barber?.id === b.id}
+                    onClick={() => {
+                      setForm({ ...form, barber: b });
+                      setStep(3);
+                    }}
                   >
-                    {t}
-                    {isOccupied && <small style={{ color: '#ff4444' }}>Ocupado</small>}
-                    {isPast && !isOccupied && <small>Indisponível</small>}
-                  </ChoiceBtn>
-                );
-              })}
-            </ScrollableGrid>
-          )}
-        </SectionCard>
-      </DateTimeWrapper>
+                    <strong>{b.name}</strong>
+                    <span>{b.especialidade || "Especialista"}</span>
+                  </ItemCard>
+                ))}
+            </MainGrid>
+          </GlassCard>
+        )}
 
-      {/* Resumo e Finalização */}
-      <SummaryBox>
-        <div className="details">
-          <div className="item">Serviço: <strong>{form.service?.name || "--"}</strong></div>
-          <div className="item">Barbeiro: <strong>{form.barber?.name || "--"}</strong></div>
-          <div className="item">
-            Data: <strong>
-              {form.time ? `${format(form.date, "dd/MM")} às ${form.time}` : "--"}
-            </strong>
-          </div>
-        </div>
-        <FinalizeBtn 
-          disabled={loading || !form.time || !form.barber || !form.service} 
-          onClick={handleFinish}
-        >
-          {loading ? <Loader2 className="animate-spin" /> : "Confirmar Missão"}
-        </FinalizeBtn>
-      </SummaryBox>
+        {step === 3 && (
+          <GlassCard
+            key="step3"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <StepBadge>Finalização</StepBadge>
+            <Header>
+              <Title>
+                <Clock size={20} color="var(--primary-color)" /> Escolha a
+                Janela de Tempo
+              </Title>
+              <ChevronLeft
+                onClick={() => setStep(2)}
+                style={{ cursor: "pointer" }}
+              />
+            </Header>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1.5fr",
+                gap: "1.5rem",
+              }}
+            >
+              {/* Calendário */}
+              <div>
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    opacity: 0.5,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Próximos Dias
+                </span>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                    marginTop: "10px",
+                  }}
+                >
+                  {Array.from({ length: 7 }).map((_, i) => {
+                    const d = addDays(new Date(), i);
+                    if (d.getDay() === 1) return null; // Ignora segunda
+                    return (
+                      <ItemCard
+                        key={i}
+                        active={isSameDay(d, form.date)}
+                        onClick={() => setForm({ ...form, date: d, time: "" })}
+                        style={{ padding: "10px" }}
+                      >
+                        <div style={{ textAlign: "center" }}>
+                          <strong>{format(d, "dd/MM")}</strong>
+                          <span style={{ fontSize: "0.6rem" }}>
+                            {format(d, "eeee", { locale: ptBR })}
+                          </span>
+                        </div>
+                      </ItemCard>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Horários */}
+              <div>
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    opacity: 0.5,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Horários Disponíveis
+                </span>
+                <TimeGrid style={{ marginTop: "10px" }}>
+                  {timeSlots.map((t) => {
+                    const isOccupied = isTimeBlocked(t);
+                    const now = new Date();
+                    const [h, m] = t.split(":").map(Number);
+                    const slotDate = new Date(form.date);
+                    slotDate.setHours(h, m, 0, 0);
+
+                    const isPast =
+                      isSameDay(form.date, now) && isAfter(now, slotDate);
+                    const disabled = isOccupied || isPast;
+
+                    return (
+                      <ItemCard
+                        key={t}
+                        disabled={disabled}
+                        active={form.time === t}
+                        onClick={() =>
+                          !disabled && setForm({ ...form, time: t })
+                        }
+                        style={{ textAlign: "center", padding: "10px" }}
+                      >
+                        {t}
+                      </ItemCard>
+                    );
+                  })}
+                </TimeGrid>
+              </div>
+            </div>
+
+            <Summary>
+              <div style={{ flex: 1 }}>
+                <p
+                  style={{
+                    fontSize: "0.7rem",
+                    opacity: 0.5,
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Detalhamento do Agendamento
+                </p>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "10px 20px",
+                  }}
+                >
+                  {/* Coluna 1: Serviço e Barbeiro */}
+                  <div>
+                    <h3
+                      style={{
+                        color: "var(--primary-color)",
+                        margin: 0,
+                        fontSize: "1.1rem",
+                      }}
+                    >
+                      {form.service?.name}
+                    </h3>
+                    <p style={{ fontSize: "0.9rem", margin: "4px 0" }}>
+                      <User
+                        size={14}
+                        style={{ verticalAlign: "middle", marginRight: "5px" }}
+                      />
+                      {form.barber?.name}
+                    </p>
+                  </div>
+
+                  {/* Coluna 2: Tempo e Valor */}
+                  <div>
+                    <p style={{ margin: 0, fontWeight: "bold" }}>
+                      <Clock
+                        size={14}
+                        style={{ verticalAlign: "middle", marginRight: "5px" }}
+                      />
+                      {form.service?.duration} minutos
+                    </p>
+                    <p
+                      style={{
+                        margin: "4px 0",
+                        color: "#00ff9d",
+                        fontWeight: 900,
+                      }}
+                    >
+                      R$ {Number(form.service?.price).toFixed(2)}
+                    </p>
+                  </div>
+
+                  {/* Linha de Baixo: Data e Recompensa */}
+                  <div
+                    style={{
+                      gridColumn: "1 / -1",
+                      borderTop: "1px solid rgba(255,255,255,0.1)",
+                      paddingTop: "10px",
+                      marginTop: "5px",
+                    }}
+                  >
+                    <p style={{ margin: 0, fontSize: "0.9rem" }}>
+                      <CalIcon
+                        size={14}
+                        style={{ verticalAlign: "middle", marginRight: "5px" }}
+                      />
+                      {format(form.date, "dd 'de' MMMM", { locale: ptBR })} às{" "}
+                      <span style={{ color: "var(--primary-color)" }}>
+                        {form.time || "--:--"}
+                      </span>
+                    </p>
+
+                    <div
+                      style={{ marginTop: "8px", display: "flex", gap: "10px" }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.65rem",
+                          background: "rgba(255,255,255,0.1)",
+                          padding: "3px 8px",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        + {Math.floor(Number(form.service?.price || 0) / 10)}{" "}
+                        PTS FIDELIDADE
+                      </span>
+                      {typeof isReward !== "undefined" && isReward && (
+                        <span
+                          style={{
+                            fontSize: "0.65rem",
+                            background: "var(--primary-color)",
+                            color: "#000",
+                            padding: "3px 8px",
+                            borderRadius: "4px",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          RESGATE DE RECOMPENSA
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <FinalBtn
+                disabled={!form.time || loading}
+                onClick={handleFinish}
+                style={{ minWidth: "160px", justifyContent: "center" }}
+              >
+                {loading ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <>
+                    CONFIRMAR <CheckCircle2 size={18} />
+                  </>
+                )}
+              </FinalBtn>
+            </Summary>
+          </GlassCard>
+        )}
+      </AnimatePresence>
     </Container>
   );
 }

@@ -27,6 +27,11 @@ const GlobalStyle = createGlobalStyle`
 const RootLayout = styled.div`
   display: flex;
   width: 100vw;
+  min-height: 100vh;
+
+  @media (max-width: 768px) {
+    flex-direction: column; 
+  }
 `;
 
 const MainContainer = styled.main`
@@ -36,15 +41,28 @@ const MainContainer = styled.main`
   padding: 24px;
   gap: 20px;
   box-sizing: border-box;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    padding-top: 80px; 
+    gap: 15px;
+  }
 `;
 
 const DashboardGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 300px; /* Carrossel largo e Status na direita */
-  grid-template-rows: 1fr; /* Ocupa todo o resto da altura */
+  grid-template-columns: 1fr 300px; 
   gap: 24px;
   flex: 1;
   min-height: 0;
+
+ 
+  @media (max-width: 1100px) {
+    grid-template-columns: 1fr; /* Empilha as colunas */
+    grid-template-rows: auto auto;
+    overflow-y: auto; /* Permite scroll no conteúdo se for muito grande */
+  }
 `;
 
 const CarouselArea = styled.div`
@@ -53,8 +71,13 @@ const CarouselArea = styled.div`
   overflow: hidden;
   border: 1px solid var(--border-color);
   background: var(--card-glass);
+  min-height: 400px; 
 
-  /* Ajuste para o carrossel preencher o container */
+  @media (max-width: 768px) {
+    min-height: 300px;
+    border-radius: 20px;
+  }
+
   & > div {
     height: 100% !important;
     min-height: 100% !important;
@@ -67,6 +90,16 @@ const SideStatusColumn = styled.div`
   flex-direction: column;
   gap: 20px;
   justify-content: flex-start;
+
+  @media (max-width: 1100px) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 /* ---------------- COMPONENTE PRINCIPAL ---------------- */
@@ -244,6 +277,11 @@ const XPDisplay = styled.h2`
   font-weight: 900;
   font-family: "Syncopate", sans-serif;
   color: var(--text-color);
+
+  @media (max-width: 480px) {
+    font-size: 1.8rem;
+  }
+
   .unit {
     font-size: 0.8rem;
     opacity: 0.4;

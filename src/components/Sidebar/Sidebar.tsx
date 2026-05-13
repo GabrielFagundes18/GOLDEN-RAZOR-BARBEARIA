@@ -132,7 +132,6 @@ const menuByRole = {
     { label: "Agendamento", icon: Scissors, path: "agenda" },
     { label: "Produtos", icon: Package, path: "produtos" },
     { label: "Histórico", icon: History, path: "historico" },
-    { label: "Perfil", icon: User, path: "perfil" },
   ],
 
   barber: [

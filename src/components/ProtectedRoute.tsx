@@ -20,6 +20,6 @@ export default function ProtectedRoute({ children, role }: any) {
     return <Navigate to="/" replace />;
   }
 
-  // ✅ autorizado
+
   return children;
 }
