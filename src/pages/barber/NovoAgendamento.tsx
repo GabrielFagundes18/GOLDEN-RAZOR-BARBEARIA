@@ -1,190 +1,257 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
-  CheckCircle,
-  Loader2,
-  User,
   Scissors,
+  User,
   Clock,
-  Calendar as CalIcon,
+  Loader2,
+  ChevronLeft,
+  CheckCircle2,
+  ArrowLeft,
 } from "lucide-react";
-import { format, addDays, isSameDay } from "date-fns";
+import { format, addDays, isSameDay, isAfter, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { api } from "../../services/api";
 import { useFetch } from "../../hooks/useFetch";
 import toast from "react-hot-toast";
 
-const Layout = styled.div`
-  display: flex;
+// --- ESTILOS (TACTICAL DARK RESPONSIVO) ---
+
+const Container = styled.div`
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+  color: #fff;
   min-height: 100vh;
-  /* Fundo preto elegante */
-  background: var(--bg-darker);
-  color: var(--text-color);
-  padding: 2rem;
+  display: flex;
+  flex-direction: column;
   justify-content: center;
+`;
+
+const GlassCard = styled(motion.div)`
+  background: rgba(10, 10, 10, 0.96);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+
+  @media (min-width: 768px) {
+    padding: 2.5rem;
+  }
+`;
+
+const StepBadge = styled.div`
+  background: var(--primary-color);
+  color: #000;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  width: fit-content;
+  letter-spacing: 1px;
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+`;
+
+const Title = styled.h2`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-family: "Rajdhani", sans-serif;
+
+  @media (min-width: 768px) {
+    font-size: 1.4rem;
+  }
 `;
 
 const MainGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 2rem;
-  width: 100%;
-  max-width: 1200px;
+  grid-template-columns: 1fr;
+  gap: 12px;
 
-  @media (max-width: 1000px) {
-    grid-template-columns: 1fr;
+  @media (min-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
 `;
 
-const SectionCard = styled.div`
-  /* Card com transparência glass ou cor sólida */
-  background: var(--card-color);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-`;
+const ItemCard = styled.button<{ active?: boolean; disabled?: boolean }>`
+  background: ${(props) =>
+    props.active ? "var(--primary-color)" : "rgba(255,255,255,0.03)"};
+  border: 1px solid
+    ${(props) =>
+      props.active ? "var(--primary-color)" : "var(--border-color)"};
+  color: ${(props) => (props.active ? "#000" : "#fff")};
+  padding: 1.2rem;
+  border-radius: 12px;
+  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+  opacity: ${(props) => (props.disabled ? 0.3 : 1)};
+  position: relative;
+  overflow: hidden;
 
-const Title = styled.h3`
-  font-family: "Rajdhani", sans-serif;
-  font-size: 0.9rem;
-  letter-spacing: 2px;
-  /* Dourado moderno */
-  color: var(--primary-color);
-  text-transform: uppercase;
-  margin-bottom: 1.2rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-shadow: 0 0 10px var(--primary-glow);
+  &:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+  }
+
+  strong {
+    display: block;
+    font-size: 1rem;
+    margin-bottom: 4px;
+    font-weight: 700;
+  }
+  span {
+    display: block;
+    font-size: 0.75rem;
+    opacity: 0.8;
+  }
 `;
 
 const InputSearch = styled.input`
   width: 100%;
-  padding: 1rem;
-  background: var(--bg-color);
+  padding: 1.2rem;
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-color);
-  transition: all 0.3s ease;
-
-  &::placeholder {
-    color: var(--text-dark);
-  }
-
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
   &:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 8px var(--primary-glow);
     outline: none;
+    background: rgba(255, 255, 255, 0.08);
   }
 `;
 
-const ChoiceGrid = styled.div`
+const DateTimeFlex = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1.5fr;
+    gap: 2.5rem;
+  }
+`;
+
+const DaysScroll = styled.div`
+  display: flex;
   gap: 10px;
-  margin-bottom: 1rem;
-`;
+  overflow-x: auto;
+  padding-bottom: 10px;
 
-const ChoiceBtn = styled.button<{ active: boolean; disabled?: boolean }>`
-  /* Alterna entre Dourado e Cinza Escuro */
-  background: ${(props) =>
-    props.active ? "var(--primary-color)" : "var(--bg-color)"};
-  border: 1px solid
-    ${(props) =>
-      props.active ? "var(--primary-color)" : "var(--border-color)"};
-  color: ${(props) => (props.active ? "#000" : "var(--text-color)")};
-
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  opacity: ${(props) => (props.disabled ? 0.2 : 1)};
-
-  &:hover:not(:disabled) {
-    border-color: var(--gold-bright);
-    box-shadow: 0 0 12px var(--gold-glow);
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 10px;
   }
 
-  small {
-    color: ${(props) =>
-      props.active ? "rgba(0,0,0,0.6)" : "var(--text-muted)"};
-    display: block;
-    font-size: 0.75rem;
+  @media (min-width: 768px) {
+    flex-direction: column;
+    overflow-x: visible;
+    max-height: 400px;
+    overflow-y: auto;
   }
 `;
 
-const SummaryBox = styled.div`
-  background: var(--bg-darker);
+const TimeGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-height: 350px;
+  overflow-y: auto;
+  padding-right: 5px;
+
+  @media (min-width: 480px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  }
+`;
+
+const Summary = styled.div`
+  margin-top: 2rem;
   padding: 1.5rem;
-  border-radius: 12px;
-  border: 1px solid var(--primary-glow);
-  margin-top: auto;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 15px;
+  border-left: 4px solid var(--primary-color);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 
-  div {
-    display: flex;
+  @media (min-width: 768px) {
+    flex-direction: row;
     justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-  }
-
-  strong {
-    color: var(--gold-color);
-    font-weight: 800;
+    align-items: center;
   }
 `;
 
-const FinalizeBtn = styled.button`
-  width: 100%;
-  padding: 1.5rem;
+const FinalBtn = styled.button`
   background: var(--primary-color);
-  color: #000; /* Texto preto sobre o dourado para legibilidade */
+  color: #000;
+  padding: 1.2rem;
   border: none;
   border-radius: 12px;
   font-weight: 900;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover:not(:disabled) {
-    background: var(--gold-bright);
-    box-shadow: 0 0 20px var(--primary-glow);
-    transform: translateY(-2px);
-  }
-
+  transition: all 0.2s;
+  text-transform: uppercase;
+  font-size: 0.9rem;
   &:disabled {
-    opacity: 0.3;
+    opacity: 0.4;
     cursor: not-allowed;
-    filter: grayscale(1);
+  }
+  &:hover:not(:disabled) {
+    filter: brightness(1.1);
+    transform: scale(1.02);
   }
 `;
 
+// --- LOGICA DO COMPONENTE ---
+
 export const NovoAgendamento: React.FC = () => {
   const navigate = useNavigate();
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [occupied, setOccupied] = useState<any[]>([]);
+
+  const { data: servicos } = useFetch<any[]>("/services");
+  const { data: barbeiros } = useFetch<any[]>("/barbers");
+  const { data: clientes } = useFetch<any[]>("/clients/all");
+
   const [form, setForm] = useState({
     cliente_id: "",
     cliente_nome: "",
     service: null as any,
     barber: null as any,
-    date: new Date(),
+    date: startOfDay(new Date()),
     time: "",
   });
-  const [searchTerm, setSearchTerm] = useState("");
-  const [occupied, setOccupied] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const { data: servicos } = useFetch<any[]>("/services");
-  const { data: barbeiros } = useFetch<any[]>("/barbers");
-  const { data: clientes } = useFetch<any[]>("/clients/all");
 
   useEffect(() => {
     if (form.barber?.id) {
@@ -195,17 +262,52 @@ export const NovoAgendamento: React.FC = () => {
             barbeiro_id: form.barber.id,
           },
         })
-        .then((res) => setOccupied(res.data))
+        .then((res) => setOccupied(res.data || []))
         .catch(() => setOccupied([]));
     }
   }, [form.date, form.barber]);
+
+  const timeSlots = useMemo(() => {
+    const slots = [];
+    for (let h = 8; h < 20; h++) {
+      for (let m = 0; m < 60; m += 40) {
+        slots.push(
+          `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`,
+        );
+      }
+    }
+    return slots;
+  }, []);
+
+  const isTimeBlocked = (slot: string) => {
+    const [slotH, slotM] = slot.split(":").map(Number);
+    const slotStartTotal = slotH * 60 + slotM;
+    const myServiceDuration = parseInt(form.service?.duration || 40);
+    const slotEndTotal = slotStartTotal + myServiceDuration;
+
+    const now = new Date();
+    const slotDate = new Date(form.date);
+    slotDate.setHours(slotH, slotM, 0, 0);
+    if (isSameDay(form.date, now) && isAfter(now, slotDate)) return true;
+
+    return occupied.some((occ) => {
+      const [occH, occM] = occ.hora_inicio.split(":").map(Number);
+      const occStart = occH * 60 + occM;
+      const occEnd = occStart + parseInt(occ.duracao || 40);
+      return (
+        (slotStartTotal >= occStart && slotStartTotal < occEnd) ||
+        (slotEndTotal > occStart && slotStartTotal < occStart)
+      );
+    });
+  };
 
   const handleSave = async () => {
     setLoading(true);
     try {
       const [h, m] = form.time.split(":");
       const d = new Date(form.date);
-      d.setHours(Number(h), Number(m));
+      d.setHours(Number(h), Number(m), 0);
+
       await api.post("/bookings/manual", {
         cliente: form.cliente_nome,
         clerk_id: form.cliente_id || `AVULSO_${Date.now()}`,
@@ -213,243 +315,272 @@ export const NovoAgendamento: React.FC = () => {
         barbeiro_id: form.barber.id,
         data: d.toISOString(),
       });
-      toast.success("Agendamento confirmado.", {
-        style: {
-          border: "1px solid #059669",
-          padding: "16px",
-          color: "#064e3b",
-          fontWeight: "500",
-        },
-        iconTheme: {
-          primary: "#059669",
-          secondary: "#FFFAEE",
-        },
-      });
-    } catch {
-      toast.error("Ops! Algo deu errado no agendamento.", {
-        style: {
-          border: "1px solid #DC2626",
-          padding: "16px",
-          color: "#991B1B",
-          fontWeight: "500",
-        },
-        iconTheme: {
-          primary: "#DC2626",
-          secondary: "#FEF2F2",
-        },
-      });
+
+      toast.success("AGENDAMENTO REALIZADO!");
+      navigate(-1);
+    } catch (err) {
+      toast.error("Erro ao salvar.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Layout>
-      <MainGrid>
-        {/* COLUNA ESQUERDA */}
-        <div>
-          <button
-            onClick={() => navigate(-1)}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#666",
-              marginBottom: "1rem",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-            }}
+    <Container>
+      <AnimatePresence mode="wait">
+        {step === 1 && (
+          <GlassCard
+            key="s1"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
           >
-            <ArrowLeft size={16} /> VOLTAR
-          </button>
-
-          <SectionCard>
-            <Title>
-              <User size={16} /> 1. Quem é o Cliente?
-            </Title>
+            <StepBadge>Fase 01 - Cliente</StepBadge>
+            <Header>
+              <Title>
+                <User size={20} color="var(--primary-color)" /> Quem é o
+                cliente?
+              </Title>
+            </Header>
             <InputSearch
-              placeholder="Digite o nome..."
+              placeholder="Nome do cliente..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                setForm({ ...form, cliente_nome: e.target.value });
+                setForm({
+                  ...form,
+                  cliente_nome: e.target.value,
+                  cliente_id: "",
+                });
               }}
             />
-            {searchTerm && !form.cliente_id && (
-              <div
-                style={{
-                  marginTop: "10px",
-                  background: "#000",
-                  borderRadius: "8px",
-                }}
-              >
-                {clientes
-                  ?.filter((c) =>
-                    c.nome.toLowerCase().includes(searchTerm.toLowerCase()),
-                  )
-                  .slice(0, 3)
-                  .map((c) => (
-                    <div
-                      key={c.id}
-                      onClick={() => {
-                        setForm({
-                          ...form,
-                          cliente_id: c.id,
-                          cliente_nome: c.nome,
-                        });
-                        setSearchTerm(c.nome);
-                      }}
-                      style={{
-                        padding: "12px",
-                        cursor: "pointer",
-                        borderBottom: "1px solid #111",
-                      }}
-                    >
-                      {c.nome}{" "}
-                      <small style={{ color: "#666", marginLeft: "8px" }}>
-                        {c.pontos} pts
-                      </small>
-                    </div>
-                  ))}
-              </div>
-            )}
-          </SectionCard>
+            <MainGrid>
+              {clientes
+                ?.filter((c) =>
+                  c.nome.toLowerCase().includes(searchTerm.toLowerCase()),
+                )
+                .slice(0, 12)
+                .map((c) => (
+                  <ItemCard
+                    key={c.id}
+                    active={form.cliente_id === c.id}
+                    onClick={() => {
+                      setForm({
+                        ...form,
+                        cliente_id: c.id,
+                        cliente_nome: c.nome,
+                      });
+                      setSearchTerm(c.nome);
+                    }}
+                  >
+                    <strong>{c.nome}</strong>
+                    <span>Fiel à barbearia</span>
+                  </ItemCard>
+                ))}
+            </MainGrid>
+            <FinalBtn
+              disabled={!form.cliente_nome}
+              onClick={() => setStep(2)}
+              style={{ marginTop: "2rem", width: "100%" }}
+            >
+              Continuar para Serviços
+            </FinalBtn>
+          </GlassCard>
+        )}
 
-          <SectionCard>
-            <Title>
-              <Scissors size={16} /> 2. Qual o Serviço?
-            </Title>
-            <ChoiceGrid>
-              {servicos?.map((s) => (
-                <ChoiceBtn
+        {step === 2 && (
+          <GlassCard
+            key="s2"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+          >
+            <StepBadge>Fase 02 - Serviço</StepBadge>
+            <Header>
+              <Title>
+                <Scissors size={20} color="var(--primary-color)" /> O que
+                faremos hoje?
+              </Title>
+              <ChevronLeft
+                onClick={() => setStep(1)}
+                style={{ cursor: "pointer" }}
+              />
+            </Header>
+            <MainGrid>
+              {servicos?.map((s: any) => (
+                <ItemCard
                   key={s.id}
                   active={form.service?.id === s.id}
-                  onClick={() => setForm({ ...form, service: s })}
+                  onClick={() => {
+                    setForm({ ...form, service: s });
+                    setStep(3);
+                  }}
                 >
-                  {s.name} <br /> <small>R$ {s.price}</small>
-                </ChoiceBtn>
+                  <strong>{s.name}</strong>
+                  <span>
+                    {s.duration} min • R$ {s.price}
+                  </span>
+                </ItemCard>
               ))}
-            </ChoiceGrid>
-          </SectionCard>
+            </MainGrid>
+          </GlassCard>
+        )}
 
-          <SectionCard>
-            <Title>
-              <User size={16} /> 3. Qual Barbeiro?
-            </Title>
-            <ChoiceGrid>
-              {barbeiros?.map((b) => (
-                <ChoiceBtn
-                  key={b.id}
-                  active={form.barber?.id === b.id}
-                  onClick={() => setForm({ ...form, barber: b })}
-                >
-                  {b.name}
-                </ChoiceBtn>
-              ))}
-            </ChoiceGrid>
-          </SectionCard>
-        </div>
-
-        {/* COLUNA DIREITA */}
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <SectionCard style={{ flex: 1 }}>
-            <Title>
-              <CalIcon size={16} /> 4. Data e Hora
-            </Title>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(4, 1fr)",
-                gap: "5px",
-                marginBottom: "1.5rem",
-              }}
-            >
-              {Array.from({ length: 8 }).map((_, i) => {
-                const d = addDays(new Date(), i);
-                if (d.getDay() === 0) return null;
-                return (
-                  <ChoiceBtn
-                    key={i}
-                    active={isSameDay(d, form.date)}
-                    onClick={() => setForm({ ...form, date: d, time: "" })}
-                    style={{ fontSize: "0.7rem" }}
+        {step === 3 && (
+          <GlassCard
+            key="s3"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+          >
+            <StepBadge>Fase 03 - Barbeiro</StepBadge>
+            <Header>
+              <Title>
+                <User size={20} color="var(--primary-color)" /> Escolha o
+                profissional
+              </Title>
+              <ChevronLeft
+                onClick={() => setStep(2)}
+                style={{ cursor: "pointer" }}
+              />
+            </Header>
+            <MainGrid>
+              {barbeiros
+                ?.filter((b) => b.ativo)
+                .map((b: any) => (
+                  <ItemCard
+                    key={b.id}
+                    active={form.barber?.id === b.id}
+                    onClick={() => {
+                      setForm({ ...form, barber: b });
+                      setStep(4);
+                    }}
                   >
-                    {format(d, "dd/MM")}
-                  </ChoiceBtn>
-                );
-              })}
-            </div>
+                    <strong>{b.name}</strong>
+                    <span>Disponível</span>
+                  </ItemCard>
+                ))}
+            </MainGrid>
+          </GlassCard>
+        )}
 
-            <Title>
-              <Clock size={16} /> Horários
-            </Title>
-            <ChoiceGrid style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
-              {[
-                "08:00",
-                "08:40",
-                "09:20",
-                "10:00",
-                "10:40",
-                "11:20",
-                "13:00",
-                "13:40",
-                "14:20",
-                "15:00",
-                "15:40",
-                "16:20",
-                "17:00",
-                "17:40",
-                "18:20",
-                "19:00",
-              ].map((t) => (
-                <ChoiceBtn
-                  key={t}
-                  active={form.time === t}
-                  disabled={occupied.includes(t)}
-                  onClick={() => setForm({ ...form, time: t })}
+        {step === 4 && (
+          <GlassCard
+            key="s4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <StepBadge>Fase 04 - Data e Hora</StepBadge>
+            <Header>
+              <Title>
+                <Clock size={20} color="var(--primary-color)" /> Quando agendar?
+              </Title>
+              <ChevronLeft
+                onClick={() => setStep(3)}
+                style={{ cursor: "pointer" }}
+              />
+            </Header>
+
+            <DateTimeFlex>
+              <div>
+                <span
+                  style={{
+                    fontSize: "0.65rem",
+                    opacity: 0.5,
+                    textTransform: "uppercase",
+                  }}
                 >
-                  {t}
-                </ChoiceBtn>
-              ))}
-            </ChoiceGrid>
+                  Selecione o Dia
+                </span>
+                <DaysScroll style={{ marginTop: "10px" }}>
+                  {Array.from({ length: 7 }).map((_, i) => {
+                    const d = addDays(new Date(), i);
+                    if (d.getDay() === 0) return null;
+                    return (
+                      <ItemCard
+                        key={i}
+                        active={isSameDay(d, form.date)}
+                        onClick={() => setForm({ ...form, date: d, time: "" })}
+                        style={{ minWidth: "90px", flexShrink: 0 }}
+                      >
+                        <div style={{ textAlign: "center" }}>
+                          <strong>{format(d, "dd/MM")}</strong>
+                          <span style={{ fontSize: "0.6rem" }}>
+                            {format(d, "eee", { locale: ptBR })}
+                          </span>
+                        </div>
+                      </ItemCard>
+                    );
+                  })}
+                </DaysScroll>
+              </div>
 
-            <SummaryBox>
               <div>
-                <span>Serviço:</span>{" "}
-                <strong>{form.service?.name || "--"}</strong>
+                <span
+                  style={{
+                    fontSize: "0.65rem",
+                    opacity: 0.5,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Horários Livres
+                </span>
+                <TimeGrid style={{ marginTop: "10px" }}>
+                  {timeSlots.map((t) => {
+                    const blocked = isTimeBlocked(t);
+                    return (
+                      <ItemCard
+                        key={t}
+                        disabled={blocked}
+                        active={form.time === t}
+                        onClick={() =>
+                          !blocked && setForm({ ...form, time: t })
+                        }
+                        style={{ textAlign: "center" }}
+                      >
+                        {t}
+                      </ItemCard>
+                    );
+                  })}
+                </TimeGrid>
               </div>
-              <div>
-                <span>Valor:</span>{" "}
-                <strong>R$ {form.service?.price || "0.00"}</strong>
+            </DateTimeFlex>
+
+            <Summary>
+              <div style={{ textAlign: "left" }}>
+                <h3
+                  style={{
+                    color: "var(--primary-color)",
+                    margin: 0,
+                    fontSize: "1.1rem",
+                  }}
+                >
+                  {form.service?.name}
+                </h3>
+                <p
+                  style={{ margin: "4px 0", opacity: 0.7, fontSize: "0.85rem" }}
+                >
+                  Com {form.barber?.name} • {format(form.date, "dd/MM")} às{" "}
+                  {form.time || "--:--"}
+                </p>
               </div>
-              <div
-                style={{
-                  borderTop: "1px solid #333",
-                  paddingTop: "8px",
-                  marginTop: "8px",
-                }}
+              <FinalBtn
+                disabled={!form.time || loading}
+                onClick={handleSave}
+                style={{ minWidth: "200px" }}
               >
-                <span>Total:</span>{" "}
-                <strong style={{ fontSize: "1.2rem" }}>
-                  R$ {form.service?.price || "0.00"}
-                </strong>
-              </div>
-            </SummaryBox>
-
-            <FinalizeBtn
-              disabled={!form.time || !form.service || !form.barber || loading}
-              onClick={handleSave}
-            >
-              {loading ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                "FINALIZAR AGORA"
-              )}
-            </FinalizeBtn>
-          </SectionCard>
-        </div>
-      </MainGrid>
-    </Layout>
+                {loading ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <>
+                    Finalizar Agendamento <CheckCircle2 size={18} />
+                  </>
+                )}
+              </FinalBtn>
+            </Summary>
+          </GlassCard>
+        )}
+      </AnimatePresence>
+    </Container>
   );
 };

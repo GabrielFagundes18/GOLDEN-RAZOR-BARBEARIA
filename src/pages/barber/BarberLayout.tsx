@@ -12,7 +12,7 @@ const Layout = styled.div`
 
 const Content = styled.main`
   flex: 1;
-  padding: 0 3rem ;
+  padding: 0 .3rem ;
 `;
 
 export default function BarberLayout() {

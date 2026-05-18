@@ -22,7 +22,6 @@ import { Vendas } from "./pages/barber/Vendas";
 import { NovoAgendamento } from "./pages/barber/NovoAgendamento";
 import { HistoricoGlobal } from "./pages/barber/HistoricoGlobal";
 import { DetalhesCliente } from "./pages/barber/DetalhesCliente";
-import { HistoricoVendas } from "./pages/barber/HistoricoVendas";
 import { AgendaDono } from "./pages/Admin/Agenda";
 import { Equipe } from "./pages/Admin/Equipe";
 import { Financeiro } from "./pages/Admin/Financeiro";
@@ -34,6 +33,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { AdminLayout } from "./pages/Admin/AdminLayout";
 import  BarberLayout  from "./pages/barber/BarberLayout";
 import { Toaster } from 'react-hot-toast';
+import { NotFound } from "./pages/NotFound";
 export default function App() {
   const { user} = useUser();
 
@@ -90,7 +90,6 @@ export default function App() {
           <Route path="vendas" element={<Vendas />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="historico" element={<HistoricoGlobal />} />
-          <Route path="HistoricoVendas" element={<HistoricoVendas />} />
           <Route path="clientes/:id/detalhes" element={<DetalhesCliente />} />
 
         </Route>
@@ -115,7 +114,7 @@ export default function App() {
 
         {/* DEFAULT */}
 
-        <Route path="*" element={<Navigate to="/d" />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

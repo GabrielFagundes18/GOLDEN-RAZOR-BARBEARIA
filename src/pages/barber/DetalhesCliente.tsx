@@ -21,7 +21,6 @@ const Layout = styled.div`
   display: flex;
   min-height: 100vh;
   color: #fff;
-  background: #0a0a0a;
 `;
 
 const MainContent = styled.main`

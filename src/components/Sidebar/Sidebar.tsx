@@ -141,7 +141,7 @@ const menuByRole = {
     { label: "Clientes", icon: Users, path: "clientes" },
     { label: "Vendas", icon: DollarSign, path: "vendas" },
     { label: "Histórico", icon: History, path: "historico" },
-     { label: "Histórico de Vendas", icon: History, path: "HistoricoVendas" },
+     { label: "Erro de Page", icon: History, path: "HistoricoVendas" },
   ],
 
   admin: [
